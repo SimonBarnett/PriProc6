@@ -1,0 +1,49 @@
+﻿<response>
+  <type>discovery</type>
+  <source>MARCHHARE</source>
+  <timestamp>02/10/2016 22:44:08</timestamp>
+  <error>
+    <code>200</code>
+    <message />
+  </error>
+  <service name="discovery" host="MARCHHARE" svctype="service" port="8090" version="1.0.0.0">
+    <BroadcastDelay>20</BroadcastDelay>
+  </service>
+  <service name="loader" host="MARCHHARE" svctype="service" port="8091" version="1.0.0.0">
+    <PriorityShare>\\MARCHHARE\priority</PriorityShare>
+    <PriorityPath>D:\priority</PriorityPath>
+    <PriorityDB>WALRUS\PRI</PriorityDB>
+    <env name="demo" />
+    <env name="wlnd" />
+  </service>
+  <service name="webrelay" host="MARCHHARE" svctype="service" port="8092" version="1.0.0.0">
+    <relay endpoint="MARCHHARE:8080">
+      <sitename>test</sitename>
+      <hostname>MARCHHARE</hostname>
+      <port>8080</port>
+      <physicalpath>C:\Users\Administrator\Documents\Visual Studio 2015\Projects\PriProc6\web</physicalpath>
+      <appSettings>
+        <loadport>8091</loadport>
+        <service>MARCHHARE</service>
+        <environment>demo</environment>
+        <loadingtimeout>120</loadingtimeout>
+        <logport>8090</logport>
+      </appSettings>
+      <endpoints>
+        <endpoint name="testfeed" type="feed" />
+        <endpoint name="loadhandler" type="handler" />
+        <endpoint name="testhandler" type="handler" />
+      </endpoints>
+    </relay>
+  </service>
+  <service name="console" host="MARCHHARE" version="1.0.0.0" svctype="subscriber">
+    <filter EntryType="31" Verbosity="99" Source="7" />
+  </service>
+  <service name="SubEvent" host="MARCHHARE" version="1.0.0.0" svctype="subscriber">
+    <filter EntryType="31" Verbosity="99" Source="7" />
+  </service>
+  <service name="broadcast" host="MARCHHARE" version="1.0.0.0" svctype="subscriber">
+    <filter EntryType="31" Verbosity="50" Source="7" />
+    <broadcastport>8100</broadcastport>
+  </service>
+</response>
