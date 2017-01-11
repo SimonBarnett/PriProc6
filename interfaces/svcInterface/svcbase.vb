@@ -160,18 +160,21 @@ Public MustInherit Class svcbase
     Private _thisConfig As svcConfig
     Private _LogQ As Queue(Of Byte()) = Nothing
 
-    Public Sub setParent(
-        ByRef Modules As IEnumerable(Of Lazy(Of svcDef, svcDefprops)),
-        ByRef Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops)),
-        ByRef msgFactory As msgFactory,
-        ByRef logQ As Queue(Of Byte())
-    ) Implements svcDef.setParent
+    Public Sub setParent(ByRef ServiceHost As Object, ByVal Props As svcDefprops) Implements svcDef.setParent
 
-        _thisConfig = New svcConfig("PriPROC6", Name)
-        _Modules = Modules
-        _Subscribers = Subscribers
-        _msgFactory = msgFactory
-        _LogQ = logQ
+        _thisConfig = New svcConfig("PriPROC6", Props.Name)
+
+        _Modules = CallByName(ServiceHost, "Modules", CallType.Get, Nothing)
+        _Subscribers = CallByName(ServiceHost, "Subscribers", CallType.Get, Nothing)
+        _msgFactory = CallByName(ServiceHost, "msgFactory", CallType.Get, Nothing)
+        _LogQ = CallByName(ServiceHost, "LogQ", CallType.Get, Nothing)
+
+        With Me
+            .Name = Props.Name
+            .defaultPort = Props.defaultPort
+            .defaultStart = Props.defaultStart
+            .udp = Props.udp
+        End With
 
         With _thisConfig
             If .regValue(False, "start").length = 0 Then

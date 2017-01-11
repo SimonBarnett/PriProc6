@@ -5,10 +5,7 @@ Imports PriPROC6.Interface.Base
 Imports System.Drawing
 
 Public Interface SubscribeDef : Inherits svcDefintion
-    Sub setParent(
-        ByRef msgFactory As msgFactory,
-        ByRef logQ As Queue(Of Byte())
-    )
+    Sub setParent(ByRef ServiceHost As Object, ByVal Props As SubscribeDefprops)
 
     Property EntryType As Integer
     Property Verbosity As Integer

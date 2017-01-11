@@ -105,19 +105,19 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ServiceInterface\Interface.BaseSvc.vbproj">
+    <ProjectReference Include="..\..\interfaces\ServiceInterface\Interface.BaseSvc.vbproj">
       <Project>{4C9DCB1A-31C7-49D9-AD71-2677B8C34F3D}</Project>
       <Name>Interface.BaseSvc</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MessageInterface\Interface.Message.vbproj">
+    <ProjectReference Include="..\..\interfaces\MessageInterface\Interface.Message.vbproj">
       <Project>{1f1e19db-2089-482c-9e33-cf2422e27199}</Project>
       <Name>Interface.Message</Name>
     </ProjectReference>
-    <ProjectReference Include="..\SubsciberInterface\Interface.Subsciber.vbproj">
+    <ProjectReference Include="..\..\interfaces\SubsciberInterface\Interface.Subsciber.vbproj">
       <Project>{72dd5852-865d-4d45-b57d-89ffcd8b9001}</Project>
       <Name>Interface.Subsciber</Name>
     </ProjectReference>
-    <ProjectReference Include="..\svcInterface\Interface.Service.vbproj">
+    <ProjectReference Include="..\..\interfaces\svcInterface\Interface.Service.vbproj">
       <Project>{42e6d8f2-ad53-42b7-b386-a61517f66560}</Project>
       <Name>Interface.Service</Name>
     </ProjectReference>

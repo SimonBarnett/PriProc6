@@ -7,12 +7,7 @@ Imports PriPROC6.regConfig
 Imports PriPROC6.svcMessage
 
 Public Interface svcDef : Inherits svcDefintion
-    Sub setParent(
-        ByRef Modules As IEnumerable(Of Lazy(Of svcDef, svcDefprops)),
-        ByRef Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops)),
-        ByRef msgFactory As msgFactory,
-        ByRef logQ As Queue(Of Byte())
-    )
+    Sub setParent(ByRef ServiceHost As Object, ByVal Props As svcDefprops)
 
     Property defaultPort As Integer
     ReadOnly Property Port As Integer

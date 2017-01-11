@@ -24,7 +24,7 @@ Public Class Hanger : Implements svc_hanger : Implements IDisposable
     <ImportMany()>
     Private Property _Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops))
 
-#Region "Parent Reference"
+#Region "Construct / Dispose"
 
     Public Sub New(
         ByRef HostAssembly As Reflection.Assembly,
@@ -61,6 +61,54 @@ Public Class Hanger : Implements svc_hanger : Implements IDisposable
         End Try
 
     End Sub
+
+#Region "IDisposable Support"
+
+    Private disposedValue As Boolean ' To detect redundant calls
+
+    ' IDisposable
+    Protected Overridable Sub Dispose(disposing As Boolean)
+        If Not disposedValue Then
+            If disposing Then
+                ' TODO: dispose managed state (managed objects).
+            End If
+
+            ' TODO: free unmanaged resources (unmanaged objects) and override Finalize() below.
+            ' TODO: set large fields to null.
+        End If
+        disposedValue = True
+    End Sub
+
+    ' TODO: override Finalize() only if Dispose(disposing As Boolean) above has code to free unmanaged resources.
+    'Protected Overrides Sub Finalize()
+    '    ' Do not change this code.  Put cleanup code in Dispose(disposing As Boolean) above.
+    '    Dispose(False)
+    '    MyBase.Finalize()
+    'End Sub
+
+    ' This code added by Visual Basic to correctly implement the disposable pattern.
+    Public Sub Dispose() Implements IDisposable.Dispose
+        ' Do not change this code.  Put cleanup code in Dispose(disposing As Boolean) above.
+        Dispose(True)
+        ' TODO: uncomment the following line if Finalize() is overridden above.
+        ' GC.SuppressFinalize(Me)
+    End Sub
+
+#End Region
+
+#End Region
+
+#Region "Public Properties"
+
+    Private _logq As New Queue(Of Byte())
+    Public Property logq As Queue(Of Byte()) Implements svc_hanger.logq
+        Get
+            Return _logq
+        End Get
+        Set(value As Queue(Of Byte()))
+            _logq = value
+        End Set
+    End Property
 
     Public _msgFactory As msgFactory = Nothing
     Public ReadOnly Property msgFactory As msgFactory Implements svc_hanger.msgFactory
@@ -118,14 +166,7 @@ Public Class Hanger : Implements svc_hanger : Implements IDisposable
 
             For Each subscr As Lazy(Of SubscribeDef, SubscribeDefprops) In _Subscribers
                 With subscr.Value
-                    .Name = subscr.Metadata.Name
-                    .defaultStart = subscr.Metadata.defaultStart
-                    .EntryType = subscr.Metadata.EntryType
-                    .Verbosity = subscr.Metadata.Verbosity
-                    .Source = subscr.Metadata.Source
-                    .Console = subscr.Metadata.Console
-
-                    .setParent(msgFactory, logq)
+                    .setParent(Me, subscr.Metadata) 'msgFactory, logq
                     If .Console Then
                         If GetConsoleWindow() <> IntPtr.Zero Then
                             logq.Enqueue(msgFactory.EncodeRequest("log", .svc_start()))
@@ -145,15 +186,8 @@ Public Class Hanger : Implements svc_hanger : Implements IDisposable
 
             For Each svr As Lazy(Of svcDef, svcDefprops) In _Modules
                 With svr.Value
-
-                    .Name = svr.Metadata.Name
-                    .defaultPort = svr.Metadata.defaultPort
-                    .defaultStart = svr.Metadata.defaultStart
-                    .udp = svr.Metadata.udp
-
-                    .setParent(Modules, Subscribers, msgFactory, logq)
+                    .setParent(Me, svr.Metadata)
                     If .Start Then logq.Enqueue(msgFactory.EncodeRequest("log", .svc_start()))
-
                     Threading.Thread.Sleep(1)
 
                 End With
@@ -218,16 +252,6 @@ Public Class Hanger : Implements svc_hanger : Implements IDisposable
 
 #Region "Logging"
 
-    Private _logq As New Queue(Of Byte())
-    Public Property logq As Queue(Of Byte()) Implements svc_hanger.logq
-        Get
-            Return _logq
-        End Get
-        Set(value As Queue(Of Byte()))
-            _logq = value
-        End Set
-    End Property
-
     Private trdLog As System.Threading.Thread
     Private Sub NotifySubscribers()
         Do
@@ -252,39 +276,6 @@ Public Class Hanger : Implements svc_hanger : Implements IDisposable
         Loop While Not _closing
 
     End Sub
-
-#Region "IDisposable Support"
-
-    Private disposedValue As Boolean ' To detect redundant calls
-
-    ' IDisposable
-    Protected Overridable Sub Dispose(disposing As Boolean)
-        If Not disposedValue Then
-            If disposing Then
-                ' TODO: dispose managed state (managed objects).
-            End If
-
-            ' TODO: free unmanaged resources (unmanaged objects) and override Finalize() below.
-            ' TODO: set large fields to null.
-        End If
-        disposedValue = True
-    End Sub
-
-    ' TODO: override Finalize() only if Dispose(disposing As Boolean) above has code to free unmanaged resources.
-    'Protected Overrides Sub Finalize()
-    '    ' Do not change this code.  Put cleanup code in Dispose(disposing As Boolean) above.
-    '    Dispose(False)
-    '    MyBase.Finalize()
-    'End Sub
-
-    ' This code added by Visual Basic to correctly implement the disposable pattern.
-    Public Sub Dispose() Implements IDisposable.Dispose
-        ' Do not change this code.  Put cleanup code in Dispose(disposing As Boolean) above.
-        Dispose(True)
-        ' TODO: uncomment the following line if Finalize() is overridden above.
-        ' GC.SuppressFinalize(Me)
-    End Sub
-#End Region
 
 #End Region
 

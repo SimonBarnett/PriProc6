@@ -7,7 +7,7 @@ Imports PriPROC6.Interface.Subsciber
 Imports PriPROC6.regConfig
 Imports PriPROC6.svcMessage
 
-Public MustInherit Class SubscriberBase : Inherits WritableXML : Implements PriPROC6.Interface.Subsciber.SubscribeDef
+Public MustInherit Class SubscriberBase : Inherits WritableXML : Implements SubscribeDef
 
 #Region "Metadata Properties"
 
@@ -259,10 +259,20 @@ Public MustInherit Class SubscriberBase : Inherits WritableXML : Implements PriP
     Private _thisConfig As svcConfig
     Private _LogQ As Queue(Of Byte()) = Nothing
 
-    Public Sub setParent(ByRef msgFactory As msgFactory, ByRef logQ As Queue(Of Byte())) Implements SubscribeDef.setParent
-        _msgFactory = msgFactory
-        _LogQ = logQ
-        _thisConfig = New svcConfig("PriPROC6", Name)
+    Public Sub setParent(ByRef ServiceHost As Object, ByVal Props As SubscribeDefprops) Implements SubscribeDef.setParent
+
+        _thisConfig = New svcConfig("PriPROC6", Props.Name)
+        _msgFactory = CallByName(ServiceHost, "msgFactory", CallType.Get, Nothing)
+        _LogQ = CallByName(ServiceHost, "LogQ", CallType.Get, Nothing)
+
+        With Me
+            .Name = Props.Name
+            .defaultStart = Props.defaultStart
+            .EntryType = Props.EntryType
+            .Verbosity = Props.Verbosity
+            .Source = Props.Source
+            .Console = Props.Console
+        End With
 
         With _thisConfig
             If .regValue(False, "start").length = 0 Then

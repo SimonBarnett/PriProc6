@@ -172,7 +172,7 @@
       <Project>{72dd5852-865d-4d45-b57d-89ffcd8b9001}</Project>
       <Name>Interface.Subsciber</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\interfaces\svcHanger\ServiceHost.vbproj">
+    <ProjectReference Include="..\..\submodules\ServiceHost\ServiceHost.vbproj">
       <Project>{669ce56f-31ce-46c0-8c97-98d76e64ca7f}</Project>
       <Name>ServiceHost</Name>
     </ProjectReference>
