@@ -141,7 +141,7 @@
     </ProjectReference>
     <ProjectReference Include="..\..\..\interfaces\ServiceInterface\Interface.BaseSvc.vbproj">
       <Project>{4C9DCB1A-31C7-49D9-AD71-2677B8C34F3D}</Project>
-      <Name>iBaseSvc</Name>
+      <Name>Interface.BaseSvc</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\interfaces\MessageInterface\Interface.Message.vbproj">
       <Project>{1f1e19db-2089-482c-9e33-cf2422e27199}</Project>
@@ -162,10 +162,6 @@
     <ProjectReference Include="..\..\messages\svcMessage.vbproj">
       <Project>{ada93d6f-4915-4a49-94d1-318347ed1a1d}</Project>
       <Name>svcMessage</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\api\WebInterface\Interface.Web.vbproj">
-      <Project>{be4b8869-d8dd-46db-b680-7807e1162642}</Project>
-      <Name>Interface.Web</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

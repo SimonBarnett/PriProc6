@@ -1,13 +1,23 @@
 ﻿'https://msdn.microsoft.com/en-us/library/dd460648(v=vs.110).aspx
 
+Imports System.IO
+Imports System.Reflection
+
 Public Module Main
 
     Sub Main()
-        Using h As New Host()
-            While h.Hanger.Count > 0
+
+        Dim fi As New FileInfo(Assembly.GetExecutingAssembly().ToString)
+        Using h As New ServiceHost.Hanger(
+            GetType(Main).Assembly,
+            New DirectoryInfo(
+                Path.Combine(fi.DirectoryName, "modules")
+            )
+        )
+            While h.Count > 0
                 Threading.Thread.Sleep(100)
             End While
-            h.Hanger.svc_stop()
+            h.svc_stop()
         End Using
 
     End Sub

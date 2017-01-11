@@ -12,7 +12,6 @@ Public Interface svcDefintion
     Property defaultStart As Boolean
     ReadOnly Property Start As Boolean
 
-    '    Property myProperties(log As Object, ParamArray Name() As String) As String
     Property thisConfig() As svcConfig
 
     Sub writeXML(ByRef outputStream As XmlWriter)

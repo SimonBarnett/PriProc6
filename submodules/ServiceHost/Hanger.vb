@@ -1,34 +1,64 @@
 ﻿Imports System.ComponentModel.Composition
+Imports System.ComponentModel.Composition.Hosting
 
 Imports Priproc6.Interface.Message
 Imports PriPROC6.svcMessage
 Imports Priproc6.Interface.Subsciber
 Imports Priproc6.Interface.Service
 
-<Export(GetType(svc_hanger))>
-Public Class Hanger : Implements svc_hanger
+Public Class Hanger : Implements svc_hanger : Implements IDisposable
 
     <Runtime.InteropServices.DllImport("kernel32.dll")>
     Public Shared Function GetConsoleWindow() As IntPtr
     End Function
 
     Private _closing As Boolean = False
+    Private _container As CompositionContainer
+
+    <ImportMany()>
+    Private Property _Modules As IEnumerable(Of Lazy(Of svcDef, svcDefprops))
+
+    <ImportMany()>
+    Private Property _Messages As IEnumerable(Of Lazy(Of msgInterface, msgInterfaceData))
+
+    <ImportMany()>
+    Private Property _Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops))
 
 #Region "Parent Reference"
 
-    Private _Modules As IEnumerable(Of Lazy(Of svcDef, svcDefprops))
-    Private _Messages As IEnumerable(Of Lazy(Of msgInterface, msgInterfaceData))
-    Private _Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops))
+    Public Sub New(
+        ByRef HostAssembly As Reflection.Assembly,
+        Optional ByVal ModulesFolder As IO.DirectoryInfo = Nothing
+    ) _
 
-    Public Sub setParent(
-        ByRef Modules As IEnumerable(Of Lazy(Of svcDef, svcDefprops)),
-        ByRef Messages As IEnumerable(Of Lazy(Of msgInterface, msgInterfaceData)),
-        ByRef Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops))
-    ) Implements svc_hanger.setParent
+        'An aggregate catalog that combines multiple catalogs
+        Dim catalog = New AggregateCatalog()
 
-        _Modules = Modules
-        _Messages = Messages
-        _Subscribers = Subscribers
+        'Adds all the parts found in the same assembly as the Program class
+        catalog.Catalogs.Add(New AssemblyCatalog(HostAssembly))
+
+        If Not ModulesFolder Is Nothing Then
+            catalog.Catalogs.Add(New DirectoryCatalog(ModulesFolder.FullName))
+        End If
+
+        'Create the CompositionContainer with the parts in the catalog
+        _container = New CompositionContainer(catalog)
+
+        'Fill the imports of this object
+
+        Dim StartExecption As Exception = Nothing
+        Try
+            _container.ComposeParts(Me)
+
+            StartExecption = svc_start()
+            If Not IsNothing(StartExecption) Then
+                Throw StartExecption
+            End If
+
+        Catch ex As Exception
+            Console.WriteLine(ex.ToString)
+
+        End Try
 
     End Sub
 
@@ -201,7 +231,6 @@ Public Class Hanger : Implements svc_hanger
     Private trdLog As System.Threading.Thread
     Private Sub NotifySubscribers()
         Do
-
             Do While _logq.Count > 0
                 Dim msg As Byte() = _logq.Dequeue
                 Dim scount As Integer = 0
@@ -223,6 +252,39 @@ Public Class Hanger : Implements svc_hanger
         Loop While Not _closing
 
     End Sub
+
+#Region "IDisposable Support"
+
+    Private disposedValue As Boolean ' To detect redundant calls
+
+    ' IDisposable
+    Protected Overridable Sub Dispose(disposing As Boolean)
+        If Not disposedValue Then
+            If disposing Then
+                ' TODO: dispose managed state (managed objects).
+            End If
+
+            ' TODO: free unmanaged resources (unmanaged objects) and override Finalize() below.
+            ' TODO: set large fields to null.
+        End If
+        disposedValue = True
+    End Sub
+
+    ' TODO: override Finalize() only if Dispose(disposing As Boolean) above has code to free unmanaged resources.
+    'Protected Overrides Sub Finalize()
+    '    ' Do not change this code.  Put cleanup code in Dispose(disposing As Boolean) above.
+    '    Dispose(False)
+    '    MyBase.Finalize()
+    'End Sub
+
+    ' This code added by Visual Basic to correctly implement the disposable pattern.
+    Public Sub Dispose() Implements IDisposable.Dispose
+        ' Do not change this code.  Put cleanup code in Dispose(disposing As Boolean) above.
+        Dispose(True)
+        ' TODO: uncomment the following line if Finalize() is overridden above.
+        ' GC.SuppressFinalize(Me)
+    End Sub
+#End Region
 
 #End Region
 

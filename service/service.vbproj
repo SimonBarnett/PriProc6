@@ -75,7 +75,8 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Host.vb" />
+    <Compile Include="Discovery\cpl\cplDiscovery.vb" />
+    <Compile Include="Discovery\Discovery.vb" />
     <Compile Include="Main.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
@@ -121,6 +122,10 @@
       <Project>{4455B4C1-2284-4499-B8F6-87D78DE17794}</Project>
       <Name>Interface.Cpl</Name>
     </ProjectReference>
+    <ProjectReference Include="..\interfaces\ServiceInterface\Interface.BaseSvc.vbproj">
+      <Project>{4C9DCB1A-31C7-49D9-AD71-2677B8C34F3D}</Project>
+      <Name>Interface.BaseSvc</Name>
+    </ProjectReference>
     <ProjectReference Include="..\submodules\libRegistry\RegistryClassLibrary\RegistryClassLibrary.vbproj">
       <Project>{35885c1d-46ec-415d-9368-bcf2cdeb4dfd}</Project>
       <Name>RegistryClassLibrary</Name>
@@ -137,9 +142,9 @@
       <Project>{72dd5852-865d-4d45-b57d-89ffcd8b9001}</Project>
       <Name>Interface.Subsciber</Name>
     </ProjectReference>
-    <ProjectReference Include="..\interfaces\svcHanger\Interface.Hanger.vbproj">
+    <ProjectReference Include="..\interfaces\svcHanger\ServiceHost.vbproj">
       <Project>{669ce56f-31ce-46c0-8c97-98d76e64ca7f}</Project>
-      <Name>Interface.Hanger</Name>
+      <Name>ServiceHost</Name>
     </ProjectReference>
     <ProjectReference Include="..\interfaces\svcInterface\Interface.Service.vbproj">
       <Project>{42e6d8f2-ad53-42b7-b386-a61517f66560}</Project>
@@ -150,7 +155,12 @@
       <Name>svcMessage</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="Discovery\Resources\ppDiscovery.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Discovery\Resources\ppLog.ico" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

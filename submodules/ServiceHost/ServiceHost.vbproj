@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{669CE56F-31CE-46C0-8C97-98D76E64CA7F}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>PriPROC6.Interface.Hanger</RootNamespace>
+    <RootNamespace>PriPROC6.ServiceHost</RootNamespace>
     <AssemblyName>svcHanger</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <MyType>Windows</MyType>

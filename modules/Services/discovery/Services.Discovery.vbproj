@@ -113,7 +113,7 @@
     </ProjectReference>
     <ProjectReference Include="..\..\..\interfaces\ServiceInterface\Interface.BaseSvc.vbproj">
       <Project>{4C9DCB1A-31C7-49D9-AD71-2677B8C34F3D}</Project>
-      <Name>iBaseSvc</Name>
+      <Name>Interface.BaseSvc</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\submodules\libRegistry\RegistryClassLibrary\RegistryClassLibrary.vbproj">
       <Project>{35885c1d-46ec-415d-9368-bcf2cdeb4dfd}</Project>

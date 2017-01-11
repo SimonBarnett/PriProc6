@@ -172,17 +172,13 @@
       <Project>{72dd5852-865d-4d45-b57d-89ffcd8b9001}</Project>
       <Name>Interface.Subsciber</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\interfaces\svcHanger\Interface.Hanger.vbproj">
+    <ProjectReference Include="..\..\interfaces\svcHanger\ServiceHost.vbproj">
       <Project>{669ce56f-31ce-46c0-8c97-98d76e64ca7f}</Project>
-      <Name>Interface.Hanger</Name>
+      <Name>ServiceHost</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\interfaces\svcInterface\Interface.Service.vbproj">
       <Project>{42e6d8f2-ad53-42b7-b386-a61517f66560}</Project>
       <Name>Interface.Service</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\api\WebInterface\Interface.Web.vbproj">
-      <Project>{be4b8869-d8dd-46db-b680-7807e1162642}</Project>
-      <Name>Interface.Web</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

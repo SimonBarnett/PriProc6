@@ -4,11 +4,6 @@ Imports Priproc6.Interface.Subsciber
 
 Public Interface svc_hanger
 
-    Sub setParent(
-        ByRef Modules As IEnumerable(Of Lazy(Of svcDef, svcDefprops)),
-        ByRef Messages As IEnumerable(Of Lazy(Of msgInterface, msgInterfaceData)),
-        ByRef Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops))
-    )
     Function svc_start() As Exception
     Function svc_stop() As Exception
     Property logq As Queue(Of Byte())

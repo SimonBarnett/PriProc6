@@ -64,9 +64,9 @@ Namespace My
     Friend Module MySettingsProperty
         
         <Global.System.ComponentModel.Design.HelpKeywordAttribute("My.Settings")>  _
-        Friend ReadOnly Property Settings() As Global.PriPROC6.[Interface].Hanger.My.MySettings
+        Friend ReadOnly Property Settings() As Global.PriPROC6.ServiceHost.My.MySettings
             Get
-                Return Global.PriPROC6.[Interface].Hanger.My.MySettings.Default
+                Return Global.PriPROC6.ServiceHost.My.MySettings.Default
             End Get
         End Property
     End Module
