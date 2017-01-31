@@ -7,9 +7,8 @@ Imports PriPROC6.svcMessage
 <ExportMetadata("Name", "endpoint")>
 Public Class cplEndpoint : Inherits cplBase
 
-    Public Overrides Sub LoadObject(ByRef o As Object)
-        thisPanel = New cplPropertyPage(TryCast(o, PriWeb))
-
-    End Sub
+    Public Overrides Function useCpl(ByRef o As Object, ParamArray args() As String) As Object
+        Return New cplPropertyPage(TryCast(o, PriWeb))
+    End Function
 
 End Class

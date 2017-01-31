@@ -1,13 +1,19 @@
-﻿Imports Microsoft.Web.Administration
-Imports System.ComponentModel.Composition
+﻿Imports System.Windows.Forms
+Imports System.ComponentModel
 Imports System.Xml
-Imports System.ComponentModel.Composition.Hosting
 Imports System.IO
 Imports System.Drawing
+
+Imports System.ComponentModel.Composition
+Imports System.ComponentModel.Composition.Hosting
+Imports Microsoft.Web.Administration
 
 Imports PriPROC6.Interface.Service
 Imports PriPROC6.Interface.Message
 Imports PriPROC6.svcMessage
+Imports PriPROC6.Services.Loader
+
+Imports PriPROC6.Interface.Cpl
 
 <Export(GetType(svcDef))>
 <ExportMetadata("Name", "webrelay")>
@@ -42,6 +48,24 @@ Public Class webRelay : Inherits svcbase
 
 #End Region
 
+    Public Function appSettings(Site As Microsoft.Web.Administration.Site, virtual As String) As ConfigurationElementCollection
+        For Each app As Microsoft.Web.Administration.Application In Site.Applications
+            If String.Compare(virtual, app.Path, True) = 0 Then
+                Return app.GetWebConfiguration.GetSection("appSettings").GetCollection
+            End If
+        Next
+        Return Nothing
+    End Function
+
+    Public Function cnSettings(Site As Microsoft.Web.Administration.Site, virtual As String) As ConfigurationElementCollection
+        For Each app As Microsoft.Web.Administration.Application In Site.Applications
+            If String.Compare(virtual, app.Path, True) = 0 Then
+                Return app.GetWebConfiguration.GetSection("connectionStrings").GetCollection
+            End If
+        Next
+        Return Nothing
+    End Function
+
 #Region "Discovery Messages"
 
     Public Overrides Sub writeXML(ByRef outputStream As XmlWriter)
@@ -49,18 +73,21 @@ Public Class webRelay : Inherits svcbase
             UpdateSites(sm)
 
             With outputStream
-                For Each w As PriWeb In LocalWebs.Values
+                For Each w As PriWeb In LocalWebs.values
                     .WriteStartElement("relay")
                     .WriteAttributeString("endpoint", w.Endpoint)
                     .WriteElementString("sitename", w.SiteName)
                     .WriteElementString("hostname", w.Hostname)
                     .WriteElementString("port", w.Port.ToString)
                     .WriteElementString("physicalpath", w.Path)
+                    .WriteElementString("virtual", w.virtual)
 
                     .WriteStartElement("appSettings")
-                    For Each att As ConfigurationElement In appSettings(sm.Sites().Item(w.SiteName))
+
+                    For Each att As ConfigurationElement In appSettings(sm.Sites(w.SiteName), w.virtual)
                         .WriteElementString(att.Attributes("key").Value, att.Attributes("value").Value)
                     Next
+
                     .WriteEndElement()
 
                     .WriteStartElement("endpoints")
@@ -116,11 +143,12 @@ Public Class webRelay : Inherits svcbase
         Dim ret As New oWebRelay(Service)
         For Each relay As XmlNode In Service.SelectNodes("//service/relay")
             Dim web As New PriWeb(
-                    relay.SelectSingleNode("sitename").InnerText,
-                    relay.SelectSingleNode("hostname").InnerText,
-                    relay.SelectSingleNode("port").InnerText,
-                    relay.SelectSingleNode("physicalpath").InnerText
-                )
+                relay.SelectSingleNode("sitename").InnerText,
+                relay.SelectSingleNode("hostname").InnerText,
+                relay.SelectSingleNode("port").InnerText,
+                relay.SelectSingleNode("physicalpath").InnerText,
+                relay.SelectSingleNode("virtual").InnerText
+            )
 
             For Each sett As XmlNode In relay.SelectSingleNode("appSettings").ChildNodes
                 web.Settings.Add(sett.Name, sett.InnerText)
@@ -188,7 +216,8 @@ Public Class webRelay : Inherits svcbase
                             For Each k As String In .Args.Keys
                                 If Not String.Compare(k, "endpoint") = 0 Then
                                     Dim f As Boolean = False
-                                    For Each att As ConfigurationElement In appSettings(sm.Sites(targetWeb.SiteName))
+
+                                    For Each att As ConfigurationElement In appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual)
                                         If String.Compare(att.Attributes("key").Value, k, True) = 0 Then
                                             If Not String.Compare(att.Attributes("value").Value, .Args(k)) = 0 Then
                                                 changes = True
@@ -199,16 +228,18 @@ Public Class webRelay : Inherits svcbase
                                             Exit For
                                         End If
                                     Next
+
+
                                     If Not f Then
                                         changes = True
                                         changeLog.LogData.AppendFormat("Adding Setting [{0}]={1}", k, .Args(k)).AppendLine()
-                                        Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName)).CreateElement("add")
+                                        Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).CreateElement("add")
                                         addelement("key") = k
                                         addelement("value") = .Args(k)
-                                        appSettings(sm.Sites(targetWeb.SiteName)).Add(addelement)
+                                        appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).Add(addelement)
                                     End If
                                 End If
-                            Next
+                                    Next
 
                             If changes Then
                                 sm.CommitChanges()
@@ -243,55 +274,52 @@ Public Class webRelay : Inherits svcbase
     Private Sub UpdateSites(sm As ServerManager, Optional ByRef log As oMsgLog = Nothing)
         For Each site As Site In sm.Sites
             With site
-                For Each binding As Binding In .Bindings
-                    Dim pw As New PriWeb(
-                        site.Name,
-                        binding.Host,
-                        binding.EndPoint.Port,
-                        .Applications("/").VirtualDirectories("/").PhysicalPath()
-                    )
+                For Each binding As Microsoft.Web.Administration.Binding In .Bindings
+                    For Each app As Microsoft.Web.Administration.Application In .Applications
 
-                    If Not LocalWebs.Keys.Contains(pw.Endpoint) Then
-                        If site.State = ObjectState.Started Then
-                            If File.Exists(
+                        Dim pw As New PriWeb(
+                            site.Name,
+                            binding.Host,
+                            binding.EndPoint.Port,
+                            app.VirtualDirectories("/").PhysicalPath(),
+                            app.Path()
+                        )
+
+                        If Not LocalWebs.Keys.Contains(pw.Endpoint) Then
+                            If site.State = ObjectState.Started Then
+                                If File.Exists(
                                 Path.Combine(
-                                    .Applications("/").VirtualDirectories("/").PhysicalPath(),
+                                    pw.Path,
                                     "bin\webinterface.dll"
                                 )
                             ) Then
-                                LocalWebs.Add(
+                                    LocalWebs.Add(
                                     pw.Endpoint,
                                     pw
                                 )
-                                If Not IsNothing(log) Then
-                                    log.LogData.AppendFormat("Found HTTP EndPoint {0}.", pw.Endpoint).AppendLine()
+                                    If Not IsNothing(log) Then
+                                        log.LogData.AppendFormat("Found HTTP EndPoint {0}.", pw.Endpoint).AppendLine()
+
+                                    End If
 
                                 End If
+                            End If
+
+                        Else
+                            If Not site.State = ObjectState.Started Then
+                                LocalWebs.Remove(pw.Endpoint)
 
                             End If
-                        End If
-
-                    Else
-                        If Not site.State = ObjectState.Started Then
-                            LocalWebs.Remove(pw.Endpoint)
 
                         End If
 
-                    End If
-
+                    Next
                 Next
+
             End With
         Next
 
     End Sub
-
-    Private Function appSettings(site As Site) As ConfigurationElementCollection
-        Return site.Applications("/").GetWebConfiguration.GetSection("appSettings").GetCollection
-    End Function
-
-    Private Function cnSettings(site As Site) As ConfigurationElementCollection
-        Return site.Applications("/").GetWebConfiguration.GetSection("connectionStrings").GetCollection
-    End Function
 
 #End Region
 
@@ -304,7 +332,7 @@ Public Class webRelay : Inherits svcbase
                 ConfigDiscovery(TryCast(Svc, oDiscovery), Log)
 
             Case "loader"
-                ConfigLoader(TryCast(Svc, oLoader), Log)
+                'ConfigLoader(TryCast(Svc, oLoader), Log)
 
             Case Else
 
@@ -321,7 +349,7 @@ Public Class webRelay : Inherits svcbase
                     Dim f As Boolean = False
                     Dim targetWeb As PriWeb = TryCast(LocalWebs(w), PriWeb)
 
-                    For Each att As ConfigurationElement In appSettings(sm.Sites(targetWeb.SiteName))
+                    For Each att As ConfigurationElement In appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual)
                         If String.Compare(att.Attributes("key").Value, "service", True) = 0 Then
                             If String.Compare(att.Attributes("value").Value, svc.Host, True) = 0 Then
                                 f = True
@@ -335,7 +363,7 @@ Public Class webRelay : Inherits svcbase
 
                     If f Then
                         f = False
-                        For Each att As ConfigurationElement In appSettings(sm.Sites(targetWeb.SiteName))
+                        For Each att As ConfigurationElement In appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual)
                             If String.Compare(att.Attributes("key").Value, "logport", True) = 0 Then
                                 f = True
                                 If Not String.Compare(att.Attributes("value").Value, svc.Port) = 0 Then
@@ -348,10 +376,10 @@ Public Class webRelay : Inherits svcbase
                         If Not f Then
                             changes = True
                             changeLog.LogData.AppendFormat("Adding Setting [{0}]={1}", "logport", svc.Port).AppendLine()
-                            Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName)).CreateElement("add")
+                            Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).CreateElement("add")
                             addelement("key") = "logport"
                             addelement("value") = svc.Port
-                            appSettings(sm.Sites(targetWeb.SiteName)).Add(addelement)
+                            appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).Add(addelement)
                         End If
                     End If
                 Next
@@ -371,162 +399,240 @@ Public Class webRelay : Inherits svcbase
 
     End Sub
 
-    Private Sub ConfigLoader(ByRef svc As oLoader, ByRef changeLog As oMsgLog)
+    'Private Sub ConfigLoader(ByRef svc As oLoader, ByRef changeLog As oMsgLog)
 
-        Dim reload As Boolean = False
-        Dim isMissing_service As Boolean = True
-        Dim isMissing_environment As Boolean = True
-        Dim isMissing_loadingtimeout As Boolean = True
-        Dim isMissing_loadport As Boolean = True
+    '    Dim reload As Boolean = False
+    '    Dim isMissing_service As Boolean = True
+    '    Dim isMissing_environment As Boolean = True
+    '    Dim isMissing_loadingtimeout As Boolean = True
+    '    Dim isMissing_loadport As Boolean = True
 
-        Dim changes As Boolean = False
-        Using sm As New ServerManager
-            Try
-                For Each w As String In LocalWebs.Keys
+    '    Dim changes As Boolean = False
+    '    Using sm As New ServerManager
+    '        Try
+    '            For Each w As String In LocalWebs.Keys
 
-                    Dim targetWeb As PriWeb = TryCast(LocalWebs(w), PriWeb)
-                    Dim f As Boolean = False
+    '                Dim targetWeb As PriWeb = TryCast(LocalWebs(w), PriWeb)
+    '                Dim f As Boolean = False
 
-                    For Each att As ConfigurationElement In appSettings(sm.Sites(targetWeb.SiteName))
-                        Select Case att.Attributes("key").Value.ToString.ToLower
-                            Case "loadport"
-                                isMissing_loadport = False
-                                If Not String.Compare(att.Attributes("value").Value, svc.Port) = 0 Then
-                                    changes = True
-                                    changeLog.LogData.AppendFormat(
-                                        "Updating setting on {2} [{0}]={1}",
-                                        att.Attributes("key").Value.ToString.ToLower,
-                                        svc.Port,
-                                        targetWeb.Endpoint
-                                    ).AppendLine()
-                                    att.Attributes("value").Value = svc.Port
-                                End If
+    '                For Each att As ConfigurationElement In appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual)
+    '                    Select Case att.Attributes("key").Value.ToString.ToLower
+    '                        Case "loadport"
+    '                            isMissing_loadport = False
+    '                            If Not String.Compare(att.Attributes("value").Value, svc.Port) = 0 Then
+    '                                changes = True
+    '                                changeLog.LogData.AppendFormat(
+    '                                    "Updating setting on {2} [{0}]={1}",
+    '                                    att.Attributes("key").Value.ToString.ToLower,
+    '                                    svc.Port,
+    '                                    targetWeb.Endpoint
+    '                                ).AppendLine()
+    '                                att.Attributes("value").Value = svc.Port
+    '                            End If
 
-                            Case "service"
-                                isMissing_service = False
-                                If String.Compare(att.Attributes("value").Value, svc.Host, True) = 0 Then
-                                    For Each cn As ConfigurationElement In cnSettings(sm.Sites(targetWeb.SiteName))
-                                        If String.Compare(cn.Attributes("name").Value, "priority", True) = 0 Then
-                                            f = True
-                                            If Not String.Compare(cn.Attributes("connectionString").Value, DSN(svc.PriorityDB), True) = 0 Then
-                                                changes = True
-                                                changeLog.LogData.AppendFormat(
-                                                    "Updating {1} DSN=[{0}]",
-                                                    DSN(svc.PriorityDB),
-                                                    targetWeb.Endpoint
-                                                ).AppendLine()
-                                                cn.Attributes("connectionString").Value = DSN(svc.PriorityDB)
-                                            End If
-                                            Exit For
-                                        End If
-                                    Next
+    '                        Case "service"
+    '                            isMissing_service = False
+    '                            If String.Compare(att.Attributes("value").Value, svc.Host, True) = 0 Then
+    '                                For Each cn As ConfigurationElement In cnSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual)
+    '                                    If String.Compare(cn.Attributes("name").Value, "priority", True) = 0 Then
+    '                                        f = True
+    '                                        If Not String.Compare(cn.Attributes("connectionString").Value, DSN(svc.PriorityDB), True) = 0 Then
+    '                                            changes = True
+    '                                            changeLog.LogData.AppendFormat(
+    '                                                "Updating {1} DSN=[{0}]",
+    '                                                DSN(svc.PriorityDB),
+    '                                                targetWeb.Endpoint
+    '                                            ).AppendLine()
+    '                                            cn.Attributes("connectionString").Value = DSN(svc.PriorityDB)
+    '                                        End If
+    '                                        Exit For
+    '                                    End If
+    '                                Next
 
-                                    If Not f Then
-                                        changes = True
-                                        changeLog.LogData.AppendFormat(
-                                            "Adding {1} DSN=[{0}]",
-                                            DSN(svc.PriorityDB),
-                                            targetWeb.Endpoint
-                                        ).AppendLine()
+    '                                If Not f Then
+    '                                    changes = True
+    '                                    changeLog.LogData.AppendFormat(
+    '                                        "Adding {1} DSN=[{0}]",
+    '                                        DSN(svc.PriorityDB),
+    '                                        targetWeb.Endpoint
+    '                                    ).AppendLine()
 
-                                        Dim addelement As ConfigurationElement = cnSettings(sm.Sites(targetWeb.SiteName)).CreateElement("add")
-                                        addelement("name") = "priority"
-                                        addelement("connectionString") = DSN(svc.PriorityDB)
-                                        cnSettings(sm.Sites(targetWeb.SiteName)).Add(addelement)
-                                    End If
-                                End If
+    '                                    Dim addelement As ConfigurationElement = cnSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual)
+    '                                    addelement("name") = "priority"
+    '                                    addelement("connectionString") = DSN(svc.PriorityDB)
+    '                                    cnSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).Add(addelement)
+    '                                End If
+    '                            End If
 
-                            Case "environment"
-                                isMissing_environment = False
+    '                        Case "environment"
+    '                            isMissing_environment = False
 
-                            Case "loadingtimeout"
-                                isMissing_loadingtimeout = False
+    '                        Case "loadingtimeout"
+    '                            isMissing_loadingtimeout = False
 
-                        End Select
+    '                    End Select
 
-                    Next
+    '                Next
 
-                    If isMissing_loadport Then
-                        changes = True
-                        changeLog.LogData.AppendFormat(
-                            "Adding Setting on {2} [{0}]={1}",
-                            "loadport",
-                            svc.Port,
-                            targetWeb.Endpoint
-                        ).AppendLine()
-                        Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName)).CreateElement("add")
-                        addelement("key") = "loadport"
-                        addelement("value") = svc.Port
-                        appSettings(sm.Sites(targetWeb.SiteName)).Add(addelement)
-                    End If
+    '                If isMissing_loadport Then
+    '                    changes = True
+    '                    changeLog.LogData.AppendFormat(
+    '                        "Adding Setting on {2} [{0}]={1}",
+    '                        "loadport",
+    '                        svc.Port,
+    '                        targetWeb.Endpoint
+    '                    ).AppendLine()
+    '                    Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).CreateElement("add")
+    '                    addelement("key") = "loadport"
+    '                    addelement("value") = svc.Port
+    '                    appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).Add(addelement)
+    '                End If
 
-                    If isMissing_service Then
-                        changes = True
-                        reload = True
-                        changeLog.LogData.AppendFormat(
-                            "Adding Setting on {2} [{0}]={1}",
-                            "service",
-                            svc.Host,
-                            targetWeb.Endpoint
-                        ).AppendLine()
-                        Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName)).CreateElement("add")
-                        addelement("key") = "service"
-                        addelement("value") = svc.Host
-                        appSettings(sm.Sites(targetWeb.SiteName)).Add(addelement)
-                    End If
+    '                If isMissing_service Then
+    '                    changes = True
+    '                    reload = True
+    '                    changeLog.LogData.AppendFormat(
+    '                        "Adding Setting on {2} [{0}]={1}",
+    '                        "service",
+    '                        svc.Host,
+    '                        targetWeb.Endpoint
+    '                    ).AppendLine()
+    '                    Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).CreateElement("add")
+    '                    addelement("key") = "service"
+    '                    addelement("value") = svc.Host
+    '                    appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).Add(addelement)
+    '                End If
 
-                    If isMissing_environment Then
-                        changes = True
-                        reload = True
-                        changeLog.LogData.AppendFormat(
-                            "Adding Setting on {2} [{0}]={1}",
-                            "environment",
-                            TryCast(svc.First.Value, PriEnv).Name,
-                            targetWeb.Endpoint
-                        ).AppendLine()
-                        Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName)).CreateElement("add")
-                        addelement("key") = "environment"
-                        addelement("value") = TryCast(svc.First.Value, PriEnv).Name
-                        appSettings(sm.Sites(targetWeb.SiteName)).Add(addelement)
-                    End If
+    '                If isMissing_environment Then
+    '                    changes = True
+    '                    reload = True
+    '                    changeLog.LogData.AppendFormat(
+    '                        "Adding Setting on {2} [{0}]={1}",
+    '                        "environment",
+    '                        TryCast(svc.First.Value, PriEnv).Name,
+    '                        targetWeb.Endpoint
+    '                    ).AppendLine()
+    '                    Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).CreateElement("add")
+    '                    addelement("key") = "environment"
+    '                    addelement("value") = TryCast(svc.First.Value, PriEnv).Name
+    '                    appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).Add(addelement)
+    '                End If
 
-                    If isMissing_loadingtimeout Then
-                        changes = True
-                        reload = True
-                        changeLog.LogData.AppendFormat(
-                            "Adding Setting on {2} [{0}]={1}",
-                            "loadingtimeout",
-                            "120",
-                            targetWeb.Endpoint
-                        ).AppendLine()
-                        Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName)).CreateElement("add")
-                        addelement("key") = "loadingtimeout"
-                        addelement("value") = "120"
-                        appSettings(sm.Sites(targetWeb.SiteName)).Add(addelement)
-                    End If
+    '                If isMissing_loadingtimeout Then
+    '                    changes = True
+    '                    reload = True
+    '                    changeLog.LogData.AppendFormat(
+    '                        "Adding Setting on {2} [{0}]={1}",
+    '                        "loadingtimeout",
+    '                        "120",
+    '                        targetWeb.Endpoint
+    '                    ).AppendLine()
+    '                    Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).CreateElement("add")
+    '                    addelement("key") = "loadingtimeout"
+    '                    addelement("value") = "120"
+    '                    appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).Add(addelement)
+    '                End If
 
-                Next
+    '            Next
 
-            Catch ex As Exception
-                changeLog.setException(ex)
+    '        Catch ex As Exception
+    '            changeLog.setException(ex)
 
-            Finally
-                If changes Then
-                    sm.CommitChanges()
-                    changeLog.LogData.AppendFormat("Commiting changes.", "").AppendLine()
-                    changeLog.EntryType = LogEntryType.SuccessAudit
-                End If
-                If reload Then ConfigLoader(svc, changeLog)
+    '        Finally
+    '            If changes Then
+    '                sm.CommitChanges()
+    '                changeLog.LogData.AppendFormat("Commiting changes.", "").AppendLine()
+    '                changeLog.EntryType = LogEntryType.SuccessAudit
+    '            End If
+    '            If reload Then ConfigLoader(svc, changeLog)
 
-            End Try
+    '        End Try
 
-        End Using
+    '    End Using
 
-    End Sub
+    'End Sub
 
 #End Region
 
 #Region "control panel"
+
+    Public Overrides ReadOnly Property ModuleVersion As Version
+        Get
+            Return Reflection.Assembly.GetExecutingAssembly.GetName.Version
+        End Get
+    End Property
+
+    Public Overrides Function useCpl(ByRef o As Object, ParamArray args() As String) As Object
+        Select Case UBound(args)
+            Case 1
+                Return New cplPropertyPage(TryCast(o, oWebRelay))
+
+            Case 2
+                For Each web As PriWeb In TryCast(o, oWebRelay).values
+                    If String.Compare(web.Endpoint, args(2), True) = 0 Then
+                        Return New cplPropertyPage(TryCast(web, PriWeb))
+                    End If
+                Next
+                Return Nothing
+
+            Case 4
+                Select Case args(3).ToLower
+                    Case "feeds"
+                        For Each web As PriWeb In TryCast(o, oWebRelay).values
+                            If String.Compare(web.Endpoint, args(2), True) = 0 Then
+                                For Each f As EndPoint In web.siteFeeds
+                                    If String.Compare(f.Name, args(4), True) = 0 Then
+                                        Return New cplFeedControl(f)
+                                    End If
+                                Next
+                            End If
+                        Next
+                        Return Nothing
+
+                    Case "handlers"
+                        For Each web As PriWeb In TryCast(o, oWebRelay).values
+                            If String.Compare(web.Endpoint, args(2), True) = 0 Then
+                                For Each f As EndPoint In web.siteHandlers
+                                    If String.Compare(f.Name, args(4), True) = 0 Then
+                                        Return New cplHanderControl(f)
+                                    End If
+                                Next
+                            End If
+                        Next
+                        Return Nothing
+
+                    Case Else
+                        Return Nothing
+
+                End Select
+
+            Case Else
+                Return Nothing
+
+        End Select
+
+    End Function
+
+    Public Overrides Sub ContextMenu(ByRef sender As Object, ByRef e As CancelEventArgs, ByRef p As oServiceBase, ParamArray args() As String)
+
+        Dim ThisRelay As oWebRelay = TryCast(p, oWebRelay)
+
+        Select Case UBound(args)
+            Case 1
+                With TryCast(sender, ContextMenuStrip).Items
+                    .Clear()
+                    .Add("Stop service", Nothing, AddressOf ThisRelay.hStopClick)
+                    .Add("Restart service", Nothing, AddressOf ThisRelay.hRestartClick)
+                End With
+
+            Case Else
+                e.Cancel = True
+
+        End Select
+
+    End Sub
+
+#Region "Tree"
 
     Public Overrides ReadOnly Property thisIcon As Dictionary(Of String, Icon)
         Get
@@ -540,11 +646,29 @@ Public Class webRelay : Inherits svcbase
         End Get
     End Property
 
-    Public Overrides ReadOnly Property ModuleVersion As Version
-        Get
-            Return Reflection.Assembly.GetExecutingAssembly.GetName.Version
-        End Get
-    End Property
+    Public Overrides Sub DrawTree(ByRef Parent As TreeNode, ByRef MEF As Object, ByVal p As oServiceBase, ByRef IconList As Dictionary(Of String, Integer))
+        With Parent
+            Dim this As TreeNode = .Nodes(TreeTag(p))
+            If IsNothing(this) Then
+                this = .Nodes.Add(TreeTag(p), Name, IconList(Name), IconList(Name))
+            Else
+                If DateDiff(DateInterval.Minute, p.LastSeen, Now) > 2 Then
+                    .Nodes.Remove(this)
+                    Exit Sub
+                End If
+            End If
+
+            For Each host As Object In TryCast(p, oWebRelay).values
+                With TryCast(host, PriWeb)
+                    .DrawTree(p, this, IconList)
+                End With
+            Next
+
+        End With
+
+    End Sub
+
+#End Region
 
 #End Region
 

@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
-    <OutputPath>..\..\service\bin\Debug\Modules\</OutputPath>
+    <OutputPath>..\..\..\bin\Debug\Modules\</OutputPath>
     <DocumentationFile>subConsole.xml</DocumentationFile>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
@@ -69,7 +69,7 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="cpl\cplSubConsole.vb" />
+    <Compile Include="cpl\oSubConsole.vb" />
     <Compile Include="Subscriber.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
@@ -118,6 +118,10 @@
     <ProjectReference Include="..\..\..\interfaces\SubsciberInterface\Interface.Subsciber.vbproj">
       <Project>{72dd5852-865d-4d45-b57d-89ffcd8b9001}</Project>
       <Name>Interface.Subsciber</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\submodules\MEF\mef\mef.vbproj">
+      <Project>{787b6d11-1ee4-42c7-9f7d-9d209f07b84a}</Project>
+      <Name>mef</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\messages\svcMessage.vbproj">
       <Project>{ada93d6f-4915-4a49-94d1-318347ed1a1d}</Project>

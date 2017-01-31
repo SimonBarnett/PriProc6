@@ -46,6 +46,10 @@
     <OptionInfer>On</OptionInfer>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="svcMessage, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\api\web\Bin\svcMessage.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Data" />
@@ -96,22 +100,13 @@
     <Compile Include="Object\oMsgDiscovery.vb" />
     <Compile Include="Object\oMsgLog.vb" />
     <Compile Include="ServiceObjects\derived\oDiscovery.vb" />
-    <Compile Include="ServiceObjects\derived\oLoader.vb" />
     <Compile Include="ServiceObjects\base\oService.vb" />
-    <Compile Include="ServiceObjects\derived\oSubBroadcast.vb" />
-    <Compile Include="ServiceObjects\derived\oSubConsole.vb" />
     <Compile Include="ServiceObjects\base\oSubscriber.vb" />
-    <Compile Include="ServiceObjects\derived\oSubEventLog.vb" />
-    <Compile Include="ServiceObjects\derived\oWebRelay.vb" />
-    <Compile Include="ServiceObjects\SubObjects\endpoint.vb" />
     <Compile Include="ServiceObjects\SubObjects\LoadAttempt.vb" />
     <Compile Include="ServiceObjects\SubObjects\LoadRow.vb" />
     <Compile Include="ServiceObjects\SubObjects\PriEnv.vb" />
     <Compile Include="ServiceObjects\SubObjects\PriUser.vb" />
-    <Compile Include="ServiceObjects\SubObjects\PriWeb.vb" />
     <Compile Include="ServiceObjects\PropertyPages\propSvcMap.vb" />
-    <Compile Include="ServiceObjects\PropertyPages\prop_env.vb" />
-    <Compile Include="ServiceObjects\PropertyPages\prop_Timeout.vb" />
     <Compile Include="ServiceObjects\SubObjects\Warning.vb" />
   </ItemGroup>
   <ItemGroup>

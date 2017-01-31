@@ -106,6 +106,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\cplInterfce\Interface.Cpl\Interface.Cpl.vbproj">
+      <Project>{4455B4C1-2284-4499-B8F6-87D78DE17794}</Project>
+      <Name>Interface.Cpl</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ServiceInterface\Interface.BaseSvc.vbproj">
       <Project>{4c9dcb1a-31c7-49d9-ad71-2677b8c34f3d}</Project>
       <Name>Interface.BaseSvc</Name>

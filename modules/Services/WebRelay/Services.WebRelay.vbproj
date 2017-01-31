@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
-    <OutputPath>..\..\service\bin\Debug\Modules\</OutputPath>
+    <OutputPath>..\..\..\bin\Debug\Modules\</OutputPath>
     <DocumentationFile>WebRelay.xml</DocumentationFile>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
@@ -74,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="cpl\endpoint\cplEndpoint.vb" />
+    <Compile Include="cpl\endpoint\endpoint.vb" />
     <Compile Include="cpl\handler\cplHanderControl.Designer.vb">
       <DependentUpon>cplHanderControl.vb</DependentUpon>
     </Compile>
@@ -81,6 +82,7 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="cpl\handler\cplHandler.vb" />
+    <Compile Include="cpl\oWebRelay.vb" />
     <Compile Include="cpl\webrelay\cplWebRelay.vb" />
     <Compile Include="cpl\feed\cplFeed.vb" />
     <Compile Include="cpl\feed\cplFeedControl.Designer.vb">
@@ -89,6 +91,8 @@
     <Compile Include="cpl\feed\cplFeedControl.vb">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="cpl\webrelay\PriWeb.vb" />
+    <Compile Include="cpl\webrelay\prop_env.vb" />
     <Compile Include="EndPoints.vb" />
     <Compile Include="WebRelay.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
@@ -135,6 +139,10 @@
     <None Include="Resources\Handler.ashx" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\api\WebInterface\Interface.Web.vbproj">
+      <Project>{be4b8869-d8dd-46db-b680-7807e1162642}</Project>
+      <Name>Interface.Web</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\interfaces\cplInterfce\Interface.Cpl\Interface.Cpl.vbproj">
       <Project>{4455b4c1-2284-4499-b8f6-87d78de17794}</Project>
       <Name>Interface.Cpl</Name>

@@ -2,13 +2,11 @@
 Imports PriPROC6.Interface.Cpl
 Imports System.Windows.Forms
 
-<Export(GetType(cplInterface))>
-<ExportMetadata("Name", "handler")>
 Public Class cplHandler : Inherits cplBase
 
-    Public Overrides Sub LoadObject(ByRef o As Object)
-        thisPanel = New cplHanderControl(o)
+    Public Overrides Function useCpl(ByRef o As Object, ParamArray args() As String) As Object
+        Return New cplHanderControl(o)
 
-    End Sub
+    End Function
 
 End Class

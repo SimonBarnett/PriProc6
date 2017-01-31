@@ -1,5 +1,4 @@
 ﻿Imports System.Xml
-Imports System.Windows.Forms
 Imports System.ComponentModel
 
 Public Enum eSvcType
@@ -72,6 +71,8 @@ Public MustInherit Class oServiceBase : Inherits oDictionary
         _Host = node.Attributes("host").Value
         _Name = node.Attributes("name").Value
         _Version = node.Attributes("version").Value
+        _BroacastXML = node.ParentNode
+
         Select Case node.Attributes("svctype").Value.ToLower
             Case "service"
                 _ServiceType = eSvcType.Service
@@ -123,6 +124,17 @@ Public MustInherit Class oServiceBase : Inherits oDictionary
         End Get
         Set(value As oServiceBase)
             _Parent = value
+        End Set
+    End Property
+
+    Private _BroacastXML As XmlNode
+    <Browsable(False)>
+    Public Property BroacastXML As XmlNode
+        Get
+            Return _BroacastXML
+        End Get
+        Set(value As XmlNode)
+            _BroacastXML = value
         End Set
     End Property
 
@@ -205,15 +217,6 @@ Public MustInherit Class oServiceBase : Inherits oDictionary
             Return DateDiff(DateInterval.Minute, LastSeen, Now) > 1
         End Get
     End Property
-
-#End Region
-
-#Region "Must Override"
-
-    Public MustOverride Sub DrawTree(ByRef Parent As TreeNode, ByRef IconList As Dictionary(Of String, Integer))
-    Public MustOverride Function useCpl(ByRef pnlName As String, ParamArray args() As String) As Object
-    Public MustOverride Sub ContextMenu(ByRef sender As Object, ByRef e As System.ComponentModel.CancelEventArgs, ParamArray args() As String)
-    Public MustOverride ReadOnly Property TreeTag As String
 
 #End Region
 

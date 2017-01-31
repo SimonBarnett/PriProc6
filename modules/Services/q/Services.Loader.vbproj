@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
-    <OutputPath>..\bin\Debug\Modules\</OutputPath>
+    <OutputPath>..\..\..\bin\Debug\Modules\</OutputPath>
     <DocumentationFile>Loader.xml</DocumentationFile>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
   </PropertyGroup>
@@ -68,34 +68,10 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="cpl\Bubble\BubbleDetail.Designer.vb">
-      <DependentUpon>BubbleDetail.vb</DependentUpon>
-    </Compile>
-    <Compile Include="cpl\Bubble\BubbleDetail.vb">
+    <Compile Include="cpl\cplLoader.vb">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="cpl\Bubble\cplBubble.vb" />
-    <Compile Include="cpl\Bubble\cplBubblePage.Designer.vb">
-      <DependentUpon>cplBubblePage.vb</DependentUpon>
-    </Compile>
-    <Compile Include="cpl\Bubble\cplBubblePage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="cpl\Bubble\ListViewItemComparer.vb" />
-    <Compile Include="cpl\cplLoader.vb" />
-    <Compile Include="cpl\User\cplUser.vb" />
-    <Compile Include="cpl\User\cplUserPage.Designer.vb">
-      <DependentUpon>cplUserPage.vb</DependentUpon>
-    </Compile>
-    <Compile Include="cpl\User\cplUserPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="cpl\User\UserDialog.Designer.vb">
-      <DependentUpon>UserDialog.vb</DependentUpon>
-    </Compile>
-    <Compile Include="cpl\User\UserDialog.vb">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="cpl\oLoader.vb" />
     <Compile Include="Loader.vb" />
     <Compile Include="LoadQ.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
@@ -117,17 +93,8 @@
     <Compile Include="PriUsers.vb" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="cpl\Bubble\BubbleDetail.resx">
-      <DependentUpon>BubbleDetail.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="cpl\Bubble\cplBubblePage.resx">
-      <DependentUpon>cplBubblePage.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="cpl\User\cplUserPage.resx">
-      <DependentUpon>cplUserPage.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="cpl\User\UserDialog.resx">
-      <DependentUpon>UserDialog.vb</DependentUpon>
+    <EmbeddedResource Include="cpl\cplLoader.resx">
+      <DependentUpon>cplLoader.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="My Project\Resources.resx">
       <Generator>VbMyResourcesResXFileCodeGenerator</Generator>

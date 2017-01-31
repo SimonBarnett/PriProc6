@@ -7,9 +7,9 @@ Imports PriPROC6.svcMessage
 <ExportMetadata("Name", "webrelay")>
 Public Class cplWebRelay : Inherits cplBase
 
-    Public Overrides Sub LoadObject(ByRef o As Object)
-        thisPanel = New cplPropertyPage(TryCast(o, oWebRelay))
+    Public Overrides Function useCpl(ByRef o As Object, ParamArray args() As String) As Object
+        Return New cplPropertyPage(TryCast(o, oWebRelay))
 
-    End Sub
+    End Function
 
 End Class

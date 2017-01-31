@@ -6,6 +6,7 @@ Imports PriPROC6.Interface.Message
 Imports PriPROC6.Interface.Subsciber
 Imports PriPROC6.regConfig
 Imports PriPROC6.svcMessage
+Imports PriPROC6.Interface.Base
 
 Public MustInherit Class svcbase
     Inherits WritableXML : Implements svcDef
@@ -154,20 +155,25 @@ Public MustInherit Class svcbase
 
 #Region "Parent"
 
-    Private _Modules As IEnumerable(Of Lazy(Of svcDef, svcDefprops))
-    Private _Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops))
-    Private _msgFactory As msgFactory
+    Private _ServiceHost As Object
     Private _thisConfig As svcConfig
-    Private _LogQ As Queue(Of Byte()) = Nothing
+
+    'Private _Modules As IEnumerable(Of Lazy(Of svcDef, svcDefprops))
+    'Private _Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops))
+    'Private _msgFactory As msgFactory    
+    'Private _LogQ As Queue(Of Byte()) = Nothing
+    'Private _ModulesFolder As IO.DirectoryInfo
 
     Public Sub setParent(ByRef ServiceHost As Object, ByVal Props As svcDefprops) Implements svcDef.setParent
 
+        _ServiceHost = ServiceHost
         _thisConfig = New svcConfig("PriPROC6", Props.Name)
 
-        _Modules = CallByName(ServiceHost, "Modules", CallType.Get, Nothing)
-        _Subscribers = CallByName(ServiceHost, "Subscribers", CallType.Get, Nothing)
-        _msgFactory = CallByName(ServiceHost, "msgFactory", CallType.Get, Nothing)
-        _LogQ = CallByName(ServiceHost, "LogQ", CallType.Get, Nothing)
+        '_Modules = CallByName(ServiceHost, "Modules", CallType.Get, Nothing)
+        '_Subscribers = CallByName(ServiceHost, "Subscribers", CallType.Get, Nothing)
+        '_msgFactory = CallByName(ServiceHost, "msgFactory", CallType.Get, Nothing)
+        '_LogQ = CallByName(ServiceHost, "LogQ", CallType.Get, Nothing)
+        '_ModulesFolder = CallByName(ServiceHost, "ModulesFolder", CallType.Get, Nothing)
 
         With Me
             .Name = Props.Name
@@ -192,6 +198,18 @@ Public MustInherit Class svcbase
         End With
     End Sub
 
+    Public ReadOnly Property ServiceHost As Object
+        Get
+            Return _ServiceHost
+        End Get
+    End Property
+
+    Public ReadOnly Property ModulesFolder As IO.DirectoryInfo
+        Get
+            Return CallByName(ServiceHost, "ModulesFolder", CallType.Get, Nothing)
+        End Get
+    End Property
+
     Public Overrides Property thisConfig() As svcConfig Implements svcDef.thisConfig
         Get
             Return _thisConfig
@@ -203,80 +221,28 @@ Public MustInherit Class svcbase
 
     Public ReadOnly Property msgFactory As msgFactory Implements svcDef.msgFactory
         Get
-            Return _msgFactory
+            Return CallByName(ServiceHost, "msgFactory", CallType.Get, Nothing)
         End Get
     End Property
 
-    Public ReadOnly Property Modules As IEnumerable(Of Lazy(Of svcDef, svcDefprops))
+    Public ReadOnly Property Modules As Dictionary(Of String, svcDef) 'IEnumerable(Of Lazy(Of svcDef, svcDefprops))
         Get
-            Return _Modules
+            Return CallByName(ServiceHost, "Modules", CallType.Get, Nothing)
         End Get
     End Property
 
-    Public ReadOnly Property Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops))
+    Public ReadOnly Property Subscribers As Dictionary(Of String, SubscribeDef) 'As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops))
         Get
-            Return _Subscribers
-        End Get
-    End Property
-
-    Public ReadOnly Property LoadedModules As IEnumerable(Of Lazy(Of svcDef, svcDefprops))
-        Get
-            Dim ret As New List(Of Lazy(Of svcDef, svcDefprops))
-            For Each svr As Lazy(Of svcDef, svcDefprops) In _Modules
-                Select Case svr.Value.svc_state
-                    Case eServiceState.started
-                        ret.Add(svr)
-                End Select
-            Next
-            Return ret
-        End Get
-    End Property
-
-    Public ReadOnly Property unLoadedModules As IEnumerable(Of Lazy(Of svcDef, svcDefprops))
-        Get
-            Dim ret As New List(Of Lazy(Of svcDef, svcDefprops))
-            For Each svr As Lazy(Of svcDef, svcDefprops) In _Modules
-                Select Case svr.Value.svc_state
-                    Case eServiceState.stopped
-                        ret.Add(svr)
-                End Select
-            Next
-            Return ret
-        End Get
-    End Property
-
-    Public ReadOnly Property LoadedSubscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops))
-        Get
-            Dim ret As New List(Of Lazy(Of SubscribeDef, SubscribeDefprops))
-            For Each svr As Lazy(Of SubscribeDef, SubscribeDefprops) In _Subscribers
-                Select Case svr.Value.svc_state
-                    Case eServiceState.started
-                        ret.Add(svr)
-                End Select
-            Next
-            Return ret
-        End Get
-    End Property
-
-    Public ReadOnly Property unLoadedSubscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops))
-        Get
-            Dim ret As New List(Of Lazy(Of SubscribeDef, SubscribeDefprops))
-            For Each svr As Lazy(Of SubscribeDef, SubscribeDefprops) In _Subscribers
-                Select Case svr.Value.svc_state
-                    Case eServiceState.stopped
-                        ret.Add(svr)
-                End Select
-            Next
-            Return ret
+            Return CallByName(ServiceHost, "Subscribers", CallType.Get, Nothing)
         End Get
     End Property
 
     Public Property LogQ As Queue(Of Byte())
         Get
-            Return _LogQ
+            Return CallByName(ServiceHost, "LogQ", CallType.Get, Nothing)
         End Get
         Set(value As Queue(Of Byte()))
-            _LogQ = value
+            CallByName(ServiceHost, "LogQ", CallType.Set, value)
         End Set
     End Property
 
@@ -317,6 +283,20 @@ Public MustInherit Class svcbase
     Public Function Icon() As Dictionary(Of String, Icon) Implements svcDef.Icon
         Return thisIcon
     End Function
+
+    Public MustOverride Function useCpl(ByRef o As Object, ParamArray args() As String) As Object Implements svcDef.useCpl
+    Public MustOverride Sub DrawTree(ByRef Parent As TreeNode, ByRef MEF As Object, ByVal p As oServiceBase, ByRef IconList As Dictionary(Of String, Integer)) Implements svcDef.DrawTree
+    Public MustOverride Sub ContextMenu(ByRef sender As Object, ByRef e As System.ComponentModel.CancelEventArgs, ByRef p As oServiceBase, ParamArray args() As String) Implements svcDef.ContextMenu
+
+    Public ReadOnly Property TreeTag(p As oServiceBase) As String Implements svcDef.TreeTag
+        Get
+            If String.Compare(p.Name, "discovery", True) = 0 Then
+                Return String.Format("{0}", p.Host)
+            Else
+                Return String.Format("{0}\{1}", p.Host, Name)
+            End If
+        End Get
+    End Property
 
 #End Region
 
@@ -579,9 +559,9 @@ Public MustInherit Class svcbase
     Public Function Send(ByVal ServerAddress As String, ByVal PortNumber As Integer, ByRef data() As Byte) As msgBase
         Try
             If String.Compare(ServerAddress, Environment.MachineName) = 0 Then
-                For Each m As Lazy(Of svcDef, svcDefprops) In LoadedModules
-                    If (m.Value.Port = PortNumber) Then
-                        Return msgFactory.Decode(m.Value.tcpByte(data, String.Format("{0}", Me.Tag)))
+                For Each m As svcDef In Modules.Values
+                    If (m.Port = PortNumber) And m.svc_state = eServiceState.started Then
+                        Return msgFactory.Decode(m.tcpByte(data, String.Format("{0}", Me.Tag)))
                     End If
                 Next
                 Throw New Exception("Local message delivery failed.")

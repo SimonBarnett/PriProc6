@@ -21,7 +21,7 @@
     <DebugType>full</DebugType>
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
-    <OutputPath>..\..\service\bin\Debug\</OutputPath>
+    <OutputPath>..\..\bin\Debug\</OutputPath>
     <DocumentationFile>pmmc.xml</DocumentationFile>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
   </PropertyGroup>
@@ -140,6 +140,10 @@
     <ProjectReference Include="..\..\interfaces\MessageInterface\Interface.Message.vbproj">
       <Project>{1f1e19db-2089-482c-9e33-cf2422e27199}</Project>
       <Name>Interface.Message</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\submodules\MEF\mef\mef.vbproj">
+      <Project>{787b6d11-1ee4-42c7-9f7d-9d209f07b84a}</Project>
+      <Name>mef</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\submodules\PriSock\PriSock.vbproj">
       <Project>{41fb05e6-a5c2-46a9-816c-bbd42a6424c5}</Project>

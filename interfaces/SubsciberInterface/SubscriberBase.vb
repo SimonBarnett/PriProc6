@@ -154,10 +154,24 @@ Public MustInherit Class SubscriberBase : Inherits WritableXML : Implements Subs
         End Set
     End Property
 
+#End Region
+
+#Region "Control Panel"
+
     Public MustOverride ReadOnly Property thisIcon As Dictionary(Of String, Icon)
     Public Function Icon() As Dictionary(Of String, Icon) Implements SubscribeDef.Icon
         Return thisIcon
     End Function
+
+    Public MustOverride Function useCpl(ByRef o As Object, ParamArray args() As String) As Object Implements SubscribeDef.useCpl
+    Public MustOverride Sub DrawTree(ByRef Parent As TreeNode, ByRef MEF As Object, ByVal p As oServiceBase, ByRef IconList As Dictionary(Of String, Integer)) Implements SubscribeDef.DrawTree
+    Public MustOverride Sub ContextMenu(ByRef sender As Object, ByRef e As System.ComponentModel.CancelEventArgs, ByRef p As oServiceBase, ParamArray args() As String) Implements SubscribeDef.ContextMenu
+
+    Public ReadOnly Property TreeTag(p As oServiceBase) As String Implements SubscribeDef.TreeTag
+        Get
+            Return String.Format("{0}\{1}", p.Host, Name)
+        End Get
+    End Property
 
 #End Region
 

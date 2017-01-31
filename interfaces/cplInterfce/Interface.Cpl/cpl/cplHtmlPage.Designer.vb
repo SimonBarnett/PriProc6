@@ -20,7 +20,7 @@ Partial Class cplHtmlPage
     'NOTE: The following procedure is required by the Windows Form Designer
     'It can be modified using the Windows Form Designer.  
     'Do not modify it using the code editor.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.WebBrowser = New System.Windows.Forms.WebBrowser()
         Me.SuspendLayout()
@@ -32,7 +32,7 @@ Partial Class cplHtmlPage
         Me.WebBrowser.MinimumSize = New System.Drawing.Size(20, 20)
         Me.WebBrowser.Name = "WebBrowser"
         Me.WebBrowser.Size = New System.Drawing.Size(150, 150)
-        Me.WebBrowser.TabIndex = 0
+        Me.WebBrowser.TabIndex = 2
         '
         'cplHtmlPage
         '

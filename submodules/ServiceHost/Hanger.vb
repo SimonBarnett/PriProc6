@@ -1,10 +1,10 @@
 ﻿Imports System.ComponentModel.Composition
 Imports System.ComponentModel.Composition.Hosting
 
-Imports Priproc6.Interface.Message
+Imports PriPROC6.Interface.Message
 Imports PriPROC6.svcMessage
-Imports Priproc6.Interface.Subsciber
-Imports Priproc6.Interface.Service
+Imports PriPROC6.Interface.Subsciber
+Imports PriPROC6.Interface.Service
 
 Public Class Hanger : Implements svc_hanger : Implements IDisposable
 
@@ -15,43 +15,38 @@ Public Class Hanger : Implements svc_hanger : Implements IDisposable
     Private _closing As Boolean = False
     Private _container As CompositionContainer
 
-    <ImportMany()>
+    <ImportMany(AllowRecomposition:=True)>
     Private Property _Modules As IEnumerable(Of Lazy(Of svcDef, svcDefprops))
 
     <ImportMany()>
     Private Property _Messages As IEnumerable(Of Lazy(Of msgInterface, msgInterfaceData))
 
-    <ImportMany()>
+    <ImportMany(AllowRecomposition:=True)>
     Private Property _Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops))
 
 #Region "Construct / Dispose"
 
+    Private _ModulesFolder As IO.DirectoryInfo
+    Private _HostAssembly As Reflection.Assembly
+
     Public Sub New(
         ByRef HostAssembly As Reflection.Assembly,
         Optional ByVal ModulesFolder As IO.DirectoryInfo = Nothing
-    ) _
+    )
 
-        'An aggregate catalog that combines multiple catalogs
-        Dim catalog = New AggregateCatalog()
-
-        'Adds all the parts found in the same assembly as the Program class
-        catalog.Catalogs.Add(New AssemblyCatalog(HostAssembly))
-
-        If Not ModulesFolder Is Nothing Then
-            catalog.Catalogs.Add(New DirectoryCatalog(ModulesFolder.FullName))
-        End If
-
-        'Create the CompositionContainer with the parts in the catalog
-        _container = New CompositionContainer(catalog)
-
-        'Fill the imports of this object
-
-        Dim StartExecption As Exception = Nothing
+        _HostAssembly = HostAssembly
+        _ModulesFolder = ModulesFolder
         Try
-            _container.ComposeParts(Me)
+
+            Dim StartExecption As Exception = Nothing
+            StartExecption = ReloadModules()
+
+            If Not StartExecption Is Nothing Then
+                Throw StartExecption
+            End If
 
             StartExecption = svc_start()
-            If Not IsNothing(StartExecption) Then
+            If Not StartExecption Is Nothing Then
                 Throw StartExecption
             End If
 
@@ -114,23 +109,45 @@ Public Class Hanger : Implements svc_hanger : Implements IDisposable
     Public ReadOnly Property msgFactory As msgFactory Implements svc_hanger.msgFactory
         Get
             If IsNothing(_msgFactory) Then
-                _msgFactory = New msgFactory(_Messages)
+                _msgFactory = New msgFactory(mefmsg)
             End If
             Return _msgFactory
         End Get
     End Property
 
-    Public ReadOnly Property Modules As IEnumerable(Of Lazy(Of svcDef, svcDefprops)) Implements svc_hanger.Modules
+    'Public ReadOnly Property Modules As IEnumerable(Of Lazy(Of svcDef, svcDefprops)) Implements svc_hanger.Modules
+    '    Get
+    '        Return _Modules
+    '    End Get
+    'End Property
+
+    'Public ReadOnly Property Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops)) Implements svc_hanger.Subscribers
+    '    Get
+    '        Return _Subscribers
+    '    End Get
+    'End Property
+
+    Public ReadOnly Property Modules As Dictionary(Of String, svcDef) Implements svc_hanger.Modules
         Get
-            Return _Modules
+            Return mefsvc
         End Get
     End Property
 
-    Public ReadOnly Property Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops)) Implements svc_hanger.Subscribers
+    Public ReadOnly Property Subscribers As Dictionary(Of String, SubscribeDef) Implements svc_hanger.Subscribers
         Get
-            Return _Subscribers
+            Return mefsub
         End Get
     End Property
+
+    Public ReadOnly Property ModulesFolder As IO.DirectoryInfo
+        Get
+            Return _ModulesFolder
+        End Get
+    End Property
+
+    Private mefsvc As New Dictionary(Of String, svcDef)
+    Private mefsub As New Dictionary(Of String, SubscribeDef)
+    Private mefmsg As New Dictionary(Of String, msgInterface)
 
 #End Region
 
@@ -139,8 +156,8 @@ Public Class Hanger : Implements svc_hanger : Implements IDisposable
     Public ReadOnly Property Count() As Integer Implements svc_hanger.Count
         Get
             Dim i As Integer = 0
-            For Each svr As Lazy(Of svcDef, svcDefprops) In Modules
-                With svr.Value
+            For Each svr As svcDef In Modules.Values
+                With svr
                     If .svc_state = eServiceState.started Then
                         i += 1
                     End If
@@ -164,32 +181,28 @@ Public Class Hanger : Implements svc_hanger : Implements IDisposable
 
             End With
 
-            For Each subscr As Lazy(Of SubscribeDef, SubscribeDefprops) In _Subscribers
-                With subscr.Value
-                    .setParent(Me, subscr.Metadata) 'msgFactory, logq
+            For Each subscr As SubscribeDef In mefsub.Values
+                With subscr
                     If .Console Then
                         If GetConsoleWindow() <> IntPtr.Zero Then
                             logq.Enqueue(msgFactory.EncodeRequest("log", .svc_start()))
+                            Threading.Thread.Sleep(1)
 
                         End If
                     Else
                         If .Start Then
                             logq.Enqueue(msgFactory.EncodeRequest("log", .svc_start()))
+                            Threading.Thread.Sleep(1)
 
                         End If
                     End If
-
-                    Threading.Thread.Sleep(1)
-
                 End With
             Next
 
-            For Each svr As Lazy(Of svcDef, svcDefprops) In _Modules
-                With svr.Value
-                    .setParent(Me, svr.Metadata)
+            For Each svr As svcDef In mefsvc.Values
+                With svr
                     If .Start Then logq.Enqueue(msgFactory.EncodeRequest("log", .svc_start()))
                     Threading.Thread.Sleep(1)
-
                 End With
             Next
 
@@ -204,8 +217,8 @@ Public Class Hanger : Implements svc_hanger : Implements IDisposable
 
     Public Function svc_stop() As Exception Implements svc_hanger.svc_stop
         Try
-            For Each svr As Lazy(Of svcDef, svcDefprops) In Modules
-                With svr.Value
+            For Each svr As svcDef In Modules.Values
+                With svr
                     If .svc_state = eServiceState.started Then
                         logq.Enqueue(msgFactory.EncodeRequest("log", .svc_stop()))
                     End If
@@ -245,6 +258,65 @@ Public Class Hanger : Implements svc_hanger : Implements IDisposable
             Return ex
 
         End Try
+
+    End Function
+
+    Public Function ReloadModules(Optional ByRef thisLog As oMsgLog = Nothing) As Exception
+        Dim ret As Exception = Nothing
+
+        Try
+
+            'An aggregate catalog that combines multiple catalogs
+            Dim catalog = New AggregateCatalog()
+
+            'Adds all the parts found in the same assembly as the Program class
+            catalog.Catalogs.Add(New AssemblyCatalog(_HostAssembly))
+
+            If Not ModulesFolder Is Nothing Then
+                catalog.Catalogs.Add(New DirectoryCatalog(_ModulesFolder.FullName))
+            End If
+
+            'Create the CompositionContainer with the parts in the catalog
+            _container = New CompositionContainer(catalog)
+
+            _container.ComposeParts(Me)
+
+            For Each msg As Lazy(Of msgInterface, msgInterfaceData) In _Messages
+                If Not mefmsg.Keys.Contains(String.Format("{0}:{1}", msg.Metadata.verb, msg.Metadata.msgType)) Then
+                    With msg.Value
+                        .msgType = msg.Metadata.msgType
+                    End With
+                    mefmsg.Add(String.Format("{0}:{1}", msg.Metadata.verb, msg.Metadata.msgType), msg.Value)
+                End If
+            Next
+
+            For Each svr As Lazy(Of svcDef, svcDefprops) In _Modules
+                If Not mefsvc.Keys.Contains(svr.Metadata.Name) Then
+                    svr.Value.setParent(Me, svr.Metadata)
+                    mefsvc.Add(svr.Metadata.Name, svr.Value)
+                End If
+            Next
+
+            For Each subscr As Lazy(Of SubscribeDef, SubscribeDefprops) In _Subscribers
+                If Not mefsub.Keys.Contains(subscr.Metadata.Name) Then
+                    subscr.Value.setParent(Me, subscr.Metadata)
+                    mefsub.Add(subscr.Metadata.Name, subscr.Value)
+                End If
+            Next
+
+        Catch ex As Exception
+            ret = ex
+            If thisLog Is Nothing Then
+                Console.Write(ex.Message)
+
+            Else
+                thisLog.setException(ex)
+
+            End If
+
+        End Try
+
+        Return ret
 
     End Function
 

@@ -61,115 +61,28 @@ Public Class oDiscovery : Inherits oService
         End Set
     End Property
 
-#End Region
-
-#Region "Tree"
-
-    <Browsable(False)>
-    Public Overrides ReadOnly Property TreeTag As String
+    Private _mefdir As String
+    <CategoryAttribute("Settings"),
+    Browsable(True),
+    [ReadOnly](True),
+    BindableAttribute(False),
+    DefaultValueAttribute(""),
+    DesignOnly(False),
+    DescriptionAttribute("The path to the discovery servers MEF objects.")>
+    Public Property mefdir As String
         Get
-            Return String.Format("{0}", Host)
+            Return _mefdir
         End Get
+        Set(value As String)
+            _mefdir = value
+        End Set
     End Property
 
-    <Browsable(False)>
-    Public ReadOnly Property SubscribersTag As String
-        Get
-            Return String.Format("{0}\subscribers", TreeTag)
-        End Get
-    End Property
-
-    Public Overrides Sub DrawTree(ByRef Parent As TreeNode, ByRef IconList As Dictionary(Of String, Integer))
-        With Parent
-            Dim this As TreeNode = .Nodes(TreeTag)
-            If IsNothing(this) Then
-                this = .Nodes.Add(TreeTag, Host, IconList("discovery"), IconList("discovery"))
-            Else
-                If IsTimedOut Then
-                    .Nodes.Remove(this)
-                    Exit Sub
-                End If
-            End If
-
-            For Each childService As Object In Me.values
-                With TryCast(childService, oServiceBase)
-                    If .ServiceType = eSvcType.Subscriber Then
-                        Dim subscr As TreeNode = this.Nodes(SubscribersTag)
-                        If IsNothing(subscr) Then
-                            subscr = this.Nodes.Add(SubscribersTag, "Subscibers", IconList("subscribers"), IconList("subscribers"))
-                        End If
-                        .DrawTree(subscr, IconList)
-                    Else
-                        .DrawTree(this, IconList)
-                    End If
-
-                End With
-            Next
-
-        End With
-    End Sub
-
 #End Region
-
-#Region "Control Panel"
-
-    Public Overrides Function useCpl(ByRef pnlName As String, ParamArray args() As String) As Object
-        Select Case UBound(args)
-            Case 0
-                pnlName = "discovery"
-                Return Me
-
-            Case Else
-                Return Nothing
-
-        End Select
-
-    End Function
-
-    Public Overrides Sub ContextMenu(ByRef sender As Object, ByRef e As CancelEventArgs, ParamArray args() As String)
-        Select Case UBound(args)
-            Case 0
-                Dim f As Boolean = False
-                With TryCast(sender, ContextMenuStrip).Items
-                    .Clear()
-                    For Each d As String In Dormant.Keys
-                        If Dormant(d) = eSvcType.Service Then
-                            .Add(String.Format("Start {0}", d), Nothing, AddressOf hStartClick)
-                            .Item(.Count - 1).Tag = d
-                            f = True
-                        End If
-                    Next
-                End With
-                If Not f Then e.Cancel = True
-
-            Case Else
-                Select Case args(UBound(args)).ToLower
-                    Case "subscribers"
-                        Dim f As Boolean = False
-                        With TryCast(sender, ContextMenuStrip).Items
-                            .Clear()
-                            For Each d As String In Dormant.Keys
-                                If Dormant(d) = eSvcType.Subscriber Then
-                                    .Add(String.Format("Start {0}", d), Nothing, AddressOf hStartClick)
-                                    .Item(.Count - 1).Tag = d
-                                    f = True
-                                End If
-                            Next
-                        End With
-                        If Not f Then e.Cancel = True
-
-                    Case Else
-                        e.Cancel = True
-
-                End Select
-
-        End Select
-
-    End Sub
 
 #Region "Context Menu Handlers"
 
-    Private Sub hStartClick(Sender As Object, e As EventArgs)
+    Public Sub hStartClick(Sender As Object, e As EventArgs)
         Dim s As CmdEventArgs = New CmdEventArgs(Host, Port, True)
         s.Message = New oMsgCmd
         With TryCast(s.Message, oMsgCmd).Args
@@ -179,7 +92,37 @@ Public Class oDiscovery : Inherits oService
         MyBase.SendCmd(Me, s)
     End Sub
 
-#End Region
+    Public Sub hInstallClick(Sender As Object, e As EventArgs)
+
+        Dim OpenFileDialog As New OpenFileDialog
+        With OpenFileDialog
+            .DefaultExt = "dll"
+            .FileName = ""
+            If .ShowDialog = DialogResult.OK Then
+                Dim fn As New IO.FileInfo(.FileName)
+                If fn.Exists And String.Compare(fn.Extension, ".dll", True) = 0 Then
+                    Try
+                        IO.File.Copy(.FileName, IO.Path.Combine(_mefdir, .SafeFileName))
+
+                    Catch ex As Exception
+
+                    End Try
+
+                Else
+                    MsgBox("Invalid File.", MsgBoxStyle.Critical + MsgBoxStyle.OkOnly, "Error.")
+
+                End If
+            End If
+        End With
+
+        Dim s As CmdEventArgs = New CmdEventArgs(Host, Port, True)
+        s.Message = New oMsgCmd
+        With TryCast(s.Message, oMsgCmd).Args
+            .Add("service", "discovery")
+            .Add("install", "start")
+        End With
+        MyBase.SendCmd(Me, s)
+    End Sub
 
 #End Region
 

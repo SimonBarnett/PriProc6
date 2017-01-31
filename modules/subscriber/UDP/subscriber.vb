@@ -6,6 +6,9 @@ Imports System.Xml
 Imports PriPROC6.PriSock
 Imports PriPROC6.regConfig
 Imports System.Drawing
+Imports PriPROC6.Interface.Cpl
+Imports System.ComponentModel
+Imports System.Windows.Forms
 
 <Export(GetType(SubscribeDef))>
 <ExportMetadata("Name", "broadcast")>
@@ -58,19 +61,48 @@ Public Class Subscriber : Inherits SubscriberBase
 
 #Region "control panel"
 
-    Public Overrides ReadOnly Property thisIcon As Dictionary(Of String, Icon)
-        Get
-            Dim ret As New Dictionary(Of String, Icon)
-            ret.Add(Me.Name, My.Resources.SubIRC)
-            Return ret
-        End Get
-    End Property
-
     Public Overrides ReadOnly Property ModuleVersion As Version
         Get
             Return Reflection.Assembly.GetExecutingAssembly.GetName.Version
         End Get
     End Property
+
+    Public Overrides Function useCpl(ByRef o As Object, ParamArray args() As String) As Object
+        Return New cplPropertyPage(TryCast(o, oSubBroadcast))
+
+    End Function
+
+    Public Overrides Sub ContextMenu(ByRef sender As Object, ByRef e As CancelEventArgs, ByRef p As oServiceBase, ParamArray args() As String)
+        e.Cancel = True
+
+    End Sub
+
+#Region "Tree"
+
+    Public Overrides ReadOnly Property thisIcon As Dictionary(Of String, Icon)
+        Get
+            Dim ret As New Dictionary(Of String, Icon)
+            ret.Add(Name, My.Resources.SubIRC)
+            Return ret
+        End Get
+    End Property
+
+    Public Overrides Sub DrawTree(ByRef Parent As TreeNode, ByRef MEF As Object, ByVal p As oServiceBase, ByRef IconList As Dictionary(Of String, Integer))
+        With Parent
+            Dim this As TreeNode = .Nodes(TreeTag(p))
+            If IsNothing(this) Then
+                this = .Nodes.Add(TreeTag(p), Name, IconList(Name), IconList(Name))
+            Else
+                If p.IsTimedOut Then
+                    .Nodes.Remove(this)
+                    Exit Sub
+                End If
+            End If
+
+        End With
+    End Sub
+
+#End Region
 
 #End Region
 

@@ -1,24 +1,23 @@
-﻿Imports System
-Imports System.Management
+﻿Imports System.Management
 Imports System.IO
 Imports System.ComponentModel.Composition
 Imports System.Xml
 Imports PriPROC6.Interface.Service
 Imports PriPROC6.Interface.Message
-Imports PriPROC6.Interface.Subsciber
 Imports PriPROC6.svcMessage
-Imports PriPROC6.PriSock
 Imports System.Data.SqlClient
 Imports System.Drawing
+Imports System.Windows.Forms
+Imports System.ComponentModel
 
 <Export(GetType(svcDef))>
 <ExportMetadata("Name", "loader")>
 <ExportMetadata("udp", False)>
 <ExportMetadata("defaultPort", 8093)>
 <ExportMetadata("defaultStart", False)>
-Public Class Loader : Inherits svcbase
+Public Class Loader
+    Inherits svcbase
     Implements svcDef
-
 
 #Region "Start / Stop"
 
@@ -394,6 +393,49 @@ Public Class Loader : Inherits svcbase
 
 #Region "control panel"
 
+    Public Overrides ReadOnly Property ModuleVersion As Version
+        Get
+            Return Reflection.Assembly.GetExecutingAssembly.GetName.Version
+        End Get
+    End Property
+
+    Public Overrides Function useCpl(ByRef o As Object, ParamArray args() As String) As Object
+        Select Case UBound(args)
+            Case 1
+                Return New cplLoader(TryCast(o, oLoader))
+                'Case 2
+                '    Select Case args(2)
+                '        Case "users"
+                '            pnlName = "User"
+                '            Return Me
+
+                '        Case "env"
+                '            Return Nothing
+
+                '        Case Else
+                '            Return Nothing
+
+                '    End Select
+
+                'Case 4
+                '    Select Case args(2)
+                '        Case "env"
+                '            pnlName = "Bubble"
+                '            Return New DirectoryInfo(Path.Combine(Me.PriorityShare, "system\queue", args(3), args(4)))
+
+                '        Case Else
+                '            Return Nothing
+
+                '    End Select
+            Case Else
+                Return Nothing
+
+        End Select
+
+    End Function
+
+#Region "Tree"
+
     Public Overrides ReadOnly Property thisIcon As Dictionary(Of String, Icon)
         Get
             Dim ret As New Dictionary(Of String, Icon)
@@ -405,11 +447,56 @@ Public Class Loader : Inherits svcbase
         End Get
     End Property
 
-    Public Overrides ReadOnly Property ModuleVersion As Version
-        Get
-            Return Reflection.Assembly.GetExecutingAssembly.GetName.Version
-        End Get
-    End Property
+    Public Overrides Sub DrawTree(ByRef Parent As TreeNode, ByRef MEF As Object, ByVal p As oServiceBase, ByRef IconList As Dictionary(Of String, Integer))
+        With Parent
+            Dim this As TreeNode = .Nodes(TreeTag(p))
+            If IsNothing(this) Then
+                this = .Nodes.Add(TreeTag(p), Name, IconList("loader"), IconList("loader"))
+            Else
+                If p.IsTimedOut Then
+                    .Nodes.Remove(this)
+                    Exit Sub
+                End If
+            End If
+
+            'With this
+            '    Dim usersNode As TreeNode = .Nodes(String.Format("{0}\users", TreeTag))
+            '    If IsNothing(usersNode) Then
+            '        usersNode = .Nodes.Add(String.Format("{0}\users", TreeTag), "Users", IconList("user"), IconList("user"))
+            '    End If
+
+            '    Dim envNode As TreeNode = .Nodes(String.Format("{0}\env", TreeTag))
+            '    If IsNothing(envNode) Then
+            '        envNode = .Nodes.Add(String.Format("{0}\env", TreeTag), "Company", IconList("environment"), IconList("environment"))
+            '    End If
+
+            '    For Each Env As Object In Me.values
+            '        With TryCast(Env, PriEnv)
+            '            .DrawTree(Me, envNode, IconList)
+            '        End With
+            '    Next
+            'End With
+        End With
+
+    End Sub
+
+    Public Overrides Sub ContextMenu(ByRef sender As Object, ByRef e As CancelEventArgs, ByRef p As oServiceBase, ParamArray args() As String)
+        Select Case UBound(args)
+            Case 1
+                With TryCast(sender, ContextMenuStrip).Items
+                    .Clear()
+                    .Add("Stop service", Nothing, AddressOf TryCast(p, oLoader).hStopClick)
+                    .Add("Restart service", Nothing, AddressOf TryCast(p, oLoader).hRestartClick)
+                End With
+
+            Case Else
+                e.Cancel = True
+
+        End Select
+
+    End Sub
+
+#End Region
 
 #End Region
 

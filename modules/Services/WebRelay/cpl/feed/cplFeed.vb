@@ -2,13 +2,11 @@
 Imports PriPROC6.Interface.Cpl
 Imports System.Windows.Forms
 
-<Export(GetType(cplInterface))>
-<ExportMetadata("Name", "feed")>
 Public Class cplFeed : Inherits cplBase
 
-    Public Overrides Sub LoadObject(ByRef o As Object)
-        thisPanel = New cplFeedControl(o)
+    Public Overrides Function useCpl(ByRef o As Object, ParamArray args() As String) As Object
+        Return New cplFeedControl(o)
 
-    End Sub
+    End Function
 
 End Class

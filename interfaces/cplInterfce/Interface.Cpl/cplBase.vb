@@ -14,22 +14,6 @@ Public MustInherit Class cplBase
         End Set
     End Property
 
-    Private _thisPanel As UserControl
-    Public Property thisPanel As UserControl
-        Get
-            Return _thisPanel
-        End Get
-        Set(value As UserControl)
-            _thisPanel = value
-        End Set
-    End Property
-
-    Public MustOverride Sub LoadObject(ByRef o As Object) Implements cplInterface.LoadObject
-
-    Public ReadOnly Property Cpl As System.Windows.Forms.UserControl Implements cplInterface.Cpl
-        Get
-            Return _thisPanel
-        End Get
-    End Property
+    Public MustOverride Function useCpl(ByRef o As Object, ParamArray args() As String) As Object Implements cplInterface.useCpl
 
 End Class

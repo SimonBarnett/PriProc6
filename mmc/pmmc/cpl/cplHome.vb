@@ -5,14 +5,11 @@ Imports PriPROC6.Interface.Cpl
 <ExportMetadata("Name", "home")>
 Public Class cplHome : Inherits cplBase
 
-    Public Overrides Sub LoadObject(ByRef o As Object)
-        thisPanel = New cplHtmlPage
-        With TryCast(thisPanel, cplHtmlPage)
-            .WebBrowser.DocumentText = My.Resources.home
-        End With
-
-
-    End Sub
+    Public Overrides Function useCpl(ByRef o As Object, ParamArray args() As String) As Object
+        Dim cplHtmlPage = New cplHtmlPage
+        cplHtmlPage.SetHTML(My.Resources.home.ToString)
+        Return cplHtmlPage
+    End Function
 
 End Class
 

@@ -59,5 +59,28 @@ Namespace My.Resources
                 resourceCulture = value
             End Set
         End Property
+        
+        '''<summary>
+        '''  Looks up a localized string similar to &lt;!--
+        ''' |
+        ''' | XSLT REC Compliant Version of IE5 Default Stylesheet
+        ''' |
+        ''' | Original version by Jonathan Marsh (jmarsh@xxxxxxxxxxxxx)
+        ''' | http://msdn.microsoft.com/xml/samples/defaultss/defaultss.xsl
+        ''' |
+        ''' | Conversion to XSLT 1.0 REC Syntax by Steve Muench (smuench@xxxxxxxxxx)
+        ''' |
+        ''' +--&gt;
+        '''&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+        '''	&lt;!-- Add doctype attributes to keep IE happy --&gt;
+        '''	&lt;xsl:output indent=&quot;no&quot; 
+        '''				method=&quot;html&quot;
+        '''				doctype-public=&quot;-//W3C//DTD XHTML 1.0 Transitional//EN&quot; [rest of string was truncated]&quot;;.
+        '''</summary>
+        Friend ReadOnly Property defaultss() As String
+            Get
+                Return ResourceManager.GetString("defaultss", resourceCulture)
+            End Get
+        End Property
     End Module
 End Namespace

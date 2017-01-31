@@ -37,12 +37,16 @@ Partial Class MMC
         Me.Panel1 = New System.Windows.Forms.Panel()
         Me.SplitContainer1 = New System.Windows.Forms.SplitContainer()
         Me.Browser = New System.Windows.Forms.TreeView()
+        Me.ContextMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
+        Me.TestToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.tabs = New System.Windows.Forms.TabControl()
         Me.TabPage1 = New System.Windows.Forms.TabPage()
         Me.TabPage2 = New System.Windows.Forms.TabPage()
         Me.Console = New System.Windows.Forms.RichTextBox()
-        Me.ContextMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
-        Me.TestToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ContextMenuStrip1 = New System.Windows.Forms.ContextMenuStrip(Me.components)
+        Me.PauseToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ShowBroadcastsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ClearToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.TableLayoutPanel1.SuspendLayout()
         Me.MenuStrip1.SuspendLayout()
         Me.Panel1.SuspendLayout()
@@ -50,9 +54,10 @@ Partial Class MMC
         Me.SplitContainer1.Panel1.SuspendLayout()
         Me.SplitContainer1.Panel2.SuspendLayout()
         Me.SplitContainer1.SuspendLayout()
+        Me.ContextMenu.SuspendLayout()
         Me.tabs.SuspendLayout()
         Me.TabPage2.SuspendLayout()
-        Me.ContextMenu.SuspendLayout()
+        Me.ContextMenuStrip1.SuspendLayout()
         Me.SuspendLayout()
         '
         'icons
@@ -125,7 +130,7 @@ Partial Class MMC
         '
         Me.RefreshToolStripMenuItem.Name = "RefreshToolStripMenuItem"
         Me.RefreshToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F5
-        Me.RefreshToolStripMenuItem.Size = New System.Drawing.Size(132, 22)
+        Me.RefreshToolStripMenuItem.Size = New System.Drawing.Size(152, 22)
         Me.RefreshToolStripMenuItem.Text = "Refresh"
         '
         'Panel1
@@ -173,6 +178,18 @@ Partial Class MMC
         Me.Browser.Size = New System.Drawing.Size(276, 409)
         Me.Browser.TabIndex = 0
         '
+        'ContextMenu
+        '
+        Me.ContextMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.TestToolStripMenuItem})
+        Me.ContextMenu.Name = "ContextMenu"
+        Me.ContextMenu.Size = New System.Drawing.Size(94, 26)
+        '
+        'TestToolStripMenuItem
+        '
+        Me.TestToolStripMenuItem.Name = "TestToolStripMenuItem"
+        Me.TestToolStripMenuItem.Size = New System.Drawing.Size(93, 22)
+        Me.TestToolStripMenuItem.Text = "test"
+        '
         'tabs
         '
         Me.tabs.Alignment = System.Windows.Forms.TabAlignment.Bottom
@@ -212,6 +229,7 @@ Partial Class MMC
         'Console
         '
         Me.Console.BackColor = System.Drawing.Color.Black
+        Me.Console.ContextMenuStrip = Me.ContextMenuStrip1
         Me.Console.Dock = System.Windows.Forms.DockStyle.Fill
         Me.Console.Font = New System.Drawing.Font("Lucida Console", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.Console.ForeColor = System.Drawing.Color.LightGreen
@@ -222,17 +240,29 @@ Partial Class MMC
         Me.Console.TabIndex = 0
         Me.Console.Text = ""
         '
-        'ContextMenu
+        'ContextMenuStrip1
         '
-        Me.ContextMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.TestToolStripMenuItem})
-        Me.ContextMenu.Name = "ContextMenu"
-        Me.ContextMenu.Size = New System.Drawing.Size(94, 26)
+        Me.ContextMenuStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.PauseToolStripMenuItem, Me.ShowBroadcastsToolStripMenuItem, Me.ClearToolStripMenuItem})
+        Me.ContextMenuStrip1.Name = "ContextMenuStrip1"
+        Me.ContextMenuStrip1.Size = New System.Drawing.Size(164, 92)
         '
-        'TestToolStripMenuItem
+        'PauseToolStripMenuItem
         '
-        Me.TestToolStripMenuItem.Name = "TestToolStripMenuItem"
-        Me.TestToolStripMenuItem.Size = New System.Drawing.Size(93, 22)
-        Me.TestToolStripMenuItem.Text = "test"
+        Me.PauseToolStripMenuItem.Name = "PauseToolStripMenuItem"
+        Me.PauseToolStripMenuItem.Size = New System.Drawing.Size(163, 22)
+        Me.PauseToolStripMenuItem.Text = "Pause"
+        '
+        'ShowBroadcastsToolStripMenuItem
+        '
+        Me.ShowBroadcastsToolStripMenuItem.Name = "ShowBroadcastsToolStripMenuItem"
+        Me.ShowBroadcastsToolStripMenuItem.Size = New System.Drawing.Size(163, 22)
+        Me.ShowBroadcastsToolStripMenuItem.Text = "Show Broadcasts"
+        '
+        'ClearToolStripMenuItem
+        '
+        Me.ClearToolStripMenuItem.Name = "ClearToolStripMenuItem"
+        Me.ClearToolStripMenuItem.Size = New System.Drawing.Size(163, 22)
+        Me.ClearToolStripMenuItem.Text = "Clear"
         '
         'MMC
         '
@@ -253,9 +283,10 @@ Partial Class MMC
         Me.SplitContainer1.Panel2.ResumeLayout(False)
         CType(Me.SplitContainer1, System.ComponentModel.ISupportInitialize).EndInit()
         Me.SplitContainer1.ResumeLayout(False)
+        Me.ContextMenu.ResumeLayout(False)
         Me.tabs.ResumeLayout(False)
         Me.TabPage2.ResumeLayout(False)
-        Me.ContextMenu.ResumeLayout(False)
+        Me.ContextMenuStrip1.ResumeLayout(False)
         Me.ResumeLayout(False)
 
     End Sub
@@ -277,4 +308,8 @@ Partial Class MMC
     Friend WithEvents Console As RichTextBox
     Friend WithEvents ContextMenu As ContextMenuStrip
     Friend WithEvents TestToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ContextMenuStrip1 As ContextMenuStrip
+    Friend WithEvents PauseToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ShowBroadcastsToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ClearToolStripMenuItem As ToolStripMenuItem
 End Class

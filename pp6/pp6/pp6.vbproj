@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{5BD96030-9AEB-4DA7-B76B-CF7CDB9F6167}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <StartupObject>pp6.Service</StartupObject>
-    <RootNamespace>pp6</RootNamespace>
+    <StartupObject>PriProc6.Service.Service</StartupObject>
+    <RootNamespace>PriProc6.Service</RootNamespace>
     <AssemblyName>pp6</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <MyType>Console</MyType>

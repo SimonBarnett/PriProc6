@@ -9,7 +9,7 @@ Public Module Main
 
         Dim fi As New FileInfo(Assembly.GetExecutingAssembly().ToString)
         Using h As New ServiceHost.Hanger(
-            GetType(Main).Assembly,
+            GetType(Priproc6.service.Discovery).Assembly,
             New DirectoryInfo(
                 Path.Combine(fi.DirectoryName, "modules")
             )

@@ -21,7 +21,7 @@
     <DebugType>full</DebugType>
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\bin\Debug\</OutputPath>
     <DocumentationFile>service.xml</DocumentationFile>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
   </PropertyGroup>
@@ -75,8 +75,17 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Discovery\cpl\cplDiscovery.vb" />
-    <Compile Include="Discovery\Discovery.vb" />
+    <Compile Include="BuiltIn\Service\Discovery\cpl\cplDiscovery.Designer.vb">
+      <DependentUpon>cplDiscovery.vb</DependentUpon>
+    </Compile>
+    <Compile Include="BuiltIn\Service\Discovery\cpl\cplDiscovery.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="BuiltIn\Service\Discovery\Discovery.vb" />
+    <Compile Include="BuiltIn\Subscriber\Broadcast\cpl\oSubBroadcast.vb" />
+    <Compile Include="BuiltIn\Subscriber\Broadcast\udp.subscriber.vb" />
+    <Compile Include="BuiltIn\Subscriber\Console\cpl\oSubConsole.vb" />
+    <Compile Include="BuiltIn\Subscriber\Console\console.Subscriber.vb" />
     <Compile Include="Main.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
@@ -95,6 +104,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="BuiltIn\Service\Discovery\cpl\cplDiscovery.resx">
+      <DependentUpon>cplDiscovery.vb</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="My Project\Resources.resx">
       <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
@@ -103,6 +115,8 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="BuiltIn\Service\Discovery\Resources\ppDiscovery.ico" />
+    <None Include="BuiltIn\Service\Discovery\Resources\ppLog.ico" />
     <None Include="My Project\app.manifest">
       <SubType>Designer</SubType>
     </None>
@@ -134,6 +148,10 @@
       <Project>{1f1e19db-2089-482c-9e33-cf2422e27199}</Project>
       <Name>Interface.Message</Name>
     </ProjectReference>
+    <ProjectReference Include="..\submodules\MEF\mef\mef.vbproj">
+      <Project>{787B6D11-1EE4-42C7-9F7D-9D209F07B84A}</Project>
+      <Name>mef</Name>
+    </ProjectReference>
     <ProjectReference Include="..\submodules\PriSock\PriSock.vbproj">
       <Project>{41fb05e6-a5c2-46a9-816c-bbd42a6424c5}</Project>
       <Name>PriSock</Name>
@@ -156,10 +174,13 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Discovery\Resources\ppDiscovery.ico" />
+    <None Include="BuiltIn\Subscriber\Broadcast\Resources\SubIRC.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Discovery\Resources\ppLog.ico" />
+    <None Include="BuiltIn\Subscriber\Console\Resources\ppConsole.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuiltIn\Subscriber\Console\Resources\subcmd.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

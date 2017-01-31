@@ -1,9 +1,6 @@
-﻿Imports System.Windows.Forms
-
-Public Interface cplInterface
+﻿Public Interface cplInterface
     Property Name As String
-    Sub LoadObject(ByRef o As Object)
-    ReadOnly Property Cpl As UserControl
+    Function useCpl(ByRef o As Object, ParamArray args() As String) As Object
 
 End Interface
 

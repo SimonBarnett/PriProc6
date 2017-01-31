@@ -120,134 +120,134 @@ Public Class oLoader : Inherits oService
 
 #End Region
 
-#Region "Tree"
+    '#Region "Tree"
 
-    <Browsable(False)>
-    Public Overrides ReadOnly Property TreeTag As String
-        Get
-            Return String.Format("{0}\{1}", Host, Name)
-        End Get
-    End Property
+    '    <Browsable(False)>
+    '    Public Overrides ReadOnly Property TreeTag As String
+    '        Get
+    '            Return String.Format("{0}\{1}", Host, Name)
+    '        End Get
+    '    End Property
 
-    Public Overrides Sub DrawTree(ByRef Parent As TreeNode, ByRef IconList As Dictionary(Of String, Integer))
-        With Parent
-            Dim this As TreeNode = .Nodes(TreeTag)
-            If IsNothing(this) Then
-                this = .Nodes.Add(TreeTag, Name, IconList("loader"), IconList("loader"))
-            Else
-                If IsTimedOut Then
-                    .Nodes.Remove(this)
-                    Exit Sub
-                End If
-            End If
+    '    Public Overrides Sub DrawTree(ByRef Parent As TreeNode, ByRef IconList As Dictionary(Of String, Integer))
+    '        With Parent
+    '            Dim this As TreeNode = .Nodes(TreeTag)
+    '            If IsNothing(this) Then
+    '                this = .Nodes.Add(TreeTag, Name, IconList("loader"), IconList("loader"))
+    '            Else
+    '                If IsTimedOut Then
+    '                    .Nodes.Remove(this)
+    '                    Exit Sub
+    '                End If
+    '            End If
 
-            With this
-                Dim usersNode As TreeNode = .Nodes(String.Format("{0}\users", TreeTag))
-                If IsNothing(usersNode) Then
-                    usersNode = .Nodes.Add(String.Format("{0}\users", TreeTag), "Users", IconList("user"), IconList("user"))
-                End If
+    '            With this
+    '                Dim usersNode As TreeNode = .Nodes(String.Format("{0}\users", TreeTag))
+    '                If IsNothing(usersNode) Then
+    '                    usersNode = .Nodes.Add(String.Format("{0}\users", TreeTag), "Users", IconList("user"), IconList("user"))
+    '                End If
 
-                Dim envNode As TreeNode = .Nodes(String.Format("{0}\env", TreeTag))
-                If IsNothing(envNode) Then
-                    envNode = .Nodes.Add(String.Format("{0}\env", TreeTag), "Company", IconList("environment"), IconList("environment"))
-                End If
+    '                Dim envNode As TreeNode = .Nodes(String.Format("{0}\env", TreeTag))
+    '                If IsNothing(envNode) Then
+    '                    envNode = .Nodes.Add(String.Format("{0}\env", TreeTag), "Company", IconList("environment"), IconList("environment"))
+    '                End If
 
-                For Each Env As Object In Me.values
-                    With TryCast(Env, PriEnv)
-                        .DrawTree(Me, envNode, IconList)
-                    End With
-                Next
-            End With
-        End With
+    '                For Each Env As Object In Me.values
+    '                    With TryCast(Env, PriEnv)
+    '                        .DrawTree(Me, envNode, IconList)
+    '                    End With
+    '                Next
+    '            End With
+    '        End With
 
-    End Sub
+    '    End Sub
 
-    Public Overrides Sub ContextMenu(ByRef sender As Object, ByRef e As CancelEventArgs, ParamArray args() As String)
-        Select Case UBound(args)
-            Case 1
-                With TryCast(sender, ContextMenuStrip).Items
-                    .Clear()
-                    .Add("Stop service", Nothing, AddressOf hStopClick)
-                    .Add("Restart service", Nothing, AddressOf hRestartClick)
-                End With
+    '    Public Overrides Sub ContextMenu(ByRef sender As Object, ByRef e As CancelEventArgs, ParamArray args() As String)
+    '        Select Case UBound(args)
+    '            Case 1
+    '                With TryCast(sender, ContextMenuStrip).Items
+    '                    .Clear()
+    '                    .Add("Stop service", Nothing, AddressOf hStopClick)
+    '                    .Add("Restart service", Nothing, AddressOf hRestartClick)
+    '                End With
 
-            Case Else
-                e.Cancel = True
+    '            Case Else
+    '                e.Cancel = True
 
-        End Select
+    '        End Select
 
-    End Sub
+    '    End Sub
 
-#Region "Context Menu Handlers"
+    '#Region "Context Menu Handlers"
 
-    Private Sub hStopClick(Sender As Object, e As EventArgs)
-        If MsgBox(String.Format("Stop service {0} on {1}?", Me.Name, Parent.Host), vbYesNo) = vbYes Then
-            Dim s As CmdEventArgs = New CmdEventArgs(Parent.Host, TryCast(Parent, oDiscovery).Port, True)
-            s.Message = New oMsgCmd
-            With TryCast(s.Message, oMsgCmd).Args
-                .Add("service", Me.Name)
-                .Add("state", "stop")
-            End With
-            LastSeen = #1/1/1#
-            MyBase.SendCmd(Me, s)
-        End If
-    End Sub
+    '    Private Sub hStopClick(Sender As Object, e As EventArgs)
+    '        If MsgBox(String.Format("Stop service {0} on {1}?", Me.Name, Parent.Host), vbYesNo) = vbYes Then
+    '            Dim s As CmdEventArgs = New CmdEventArgs(Parent.Host, TryCast(Parent, oDiscovery).Port, True)
+    '            s.Message = New oMsgCmd
+    '            With TryCast(s.Message, oMsgCmd).Args
+    '                .Add("service", Me.Name)
+    '                .Add("state", "stop")
+    '            End With
+    '            LastSeen = #1/1/1#
+    '            MyBase.SendCmd(Me, s)
+    '        End If
+    '    End Sub
 
-    Private Sub hRestartClick(Sender As Object, e As EventArgs)
-        If MsgBox(String.Format("Restart service {0} on {1}?", Me.Name, Parent.Host), vbYesNo) = vbYes Then
-            Dim s As CmdEventArgs = New CmdEventArgs(Parent.Host, TryCast(Parent, oDiscovery).Port, True)
-            s.Message = New oMsgCmd
-            With TryCast(s.Message, oMsgCmd).Args
-                .Add("service", Me.Name)
-                .Add("state", "restart")
-            End With
-            LastSeen = #1/1/1#
-            MyBase.SendCmd(Me, s)
-        End If
-    End Sub
+    '    Private Sub hRestartClick(Sender As Object, e As EventArgs)
+    '        If MsgBox(String.Format("Restart service {0} on {1}?", Me.Name, Parent.Host), vbYesNo) = vbYes Then
+    '            Dim s As CmdEventArgs = New CmdEventArgs(Parent.Host, TryCast(Parent, oDiscovery).Port, True)
+    '            s.Message = New oMsgCmd
+    '            With TryCast(s.Message, oMsgCmd).Args
+    '                .Add("service", Me.Name)
+    '                .Add("state", "restart")
+    '            End With
+    '            LastSeen = #1/1/1#
+    '            MyBase.SendCmd(Me, s)
+    '        End If
+    '    End Sub
 
-#End Region
+    '#End Region
 
-#End Region
+    '#End Region
 
-#Region "Control Panel"
+    '#Region "Control Panel"
 
-    Public Overrides Function useCpl(ByRef pnlName As String, ParamArray args() As String) As Object
-        Select Case UBound(args)
-            Case 1
-                pnlName = "loader"
-                Return Me
-            Case 2
-                Select Case args(2)
-                    Case "users"
-                        pnlName = "User"
-                        Return Me
+    '    Public Overrides Function useCpl(ByRef pnlName As String, ParamArray args() As String) As Object
+    '        Select Case UBound(args)
+    '            Case 1
+    '                pnlName = "loader"
+    '                Return Me
+    '            Case 2
+    '                Select Case args(2)
+    '                    Case "users"
+    '                        pnlName = "User"
+    '                        Return Me
 
-                    Case "env"
-                        Return Nothing
+    '                    Case "env"
+    '                        Return Nothing
 
-                    Case Else
-                        Return Nothing
+    '                    Case Else
+    '                        Return Nothing
 
-                End Select
+    '                End Select
 
-            Case 4
-                Select Case args(2)
-                    Case "env"
-                        pnlName = "Bubble"
-                        Return New DirectoryInfo(Path.Combine(Me.PriorityShare, "system\queue", args(3), args(4)))
+    '            Case 4
+    '                Select Case args(2)
+    '                    Case "env"
+    '                        pnlName = "Bubble"
+    '                        Return New DirectoryInfo(Path.Combine(Me.PriorityShare, "system\queue", args(3), args(4)))
 
-                    Case Else
-                        Return Nothing
+    '                    Case Else
+    '                        Return Nothing
 
-                End Select
-            Case Else
-                Return Nothing
+    '                End Select
+    '            Case Else
+    '                Return Nothing
 
-        End Select
+    '        End Select
 
-    End Function
+    '    End Function
 
-#End Region
+    '#End Region
 
 End Class

@@ -47,6 +47,7 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -103,9 +104,17 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\modules\messages\svcMessage.vbproj">
+      <Project>{ada93d6f-4915-4a49-94d1-318347ed1a1d}</Project>
+      <Name>svcMessage</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\submodules\libRegistry\RegistryClassLibrary\RegistryClassLibrary.vbproj">
       <Project>{35885C1D-46EC-415D-9368-BCF2CDEB4DFD}</Project>
       <Name>RegistryClassLibrary</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cplInterfce\Interface.Cpl\Interface.Cpl.vbproj">
+      <Project>{4455b4c1-2284-4499-b8f6-87d78de17794}</Project>
+      <Name>Interface.Cpl</Name>
     </ProjectReference>
     <ProjectReference Include="..\MessageInterface\Interface.Message.vbproj">
       <Project>{1F1E19DB-2089-482C-9E33-CF2422E27199}</Project>

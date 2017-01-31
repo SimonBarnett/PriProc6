@@ -2,11 +2,11 @@
 Imports System.ComponentModel.Composition.Hosting
 Imports System.IO
 
-Imports PriPROC6.service
 Imports PriPROC6.Interface.Message
 Imports PriPROC6.Interface.Service
 Imports PriPROC6.Interface.Subsciber
 Imports PriPROC6.Interface.Cpl
+
 Imports PriPROC6.PriSock
 Imports PriPROC6.svcMessage
 Imports System.Xml
@@ -16,18 +16,7 @@ Public Class MMC
 #Region "MEF objects"
 
     Dim _container As CompositionContainer
-
-    <ImportMany()>
-    Public Property Modules As IEnumerable(Of Lazy(Of svcDef, svcDefprops))
-
-    <ImportMany()>
-    Public Property Messages As IEnumerable(Of Lazy(Of msgInterface, msgInterfaceData))
-
-    <ImportMany()>
-    Public Property Subscribers As IEnumerable(Of Lazy(Of SubscribeDef, SubscribeDefprops))
-
-    <ImportMany()>
-    Public Property Cpl As IEnumerable(Of Lazy(Of cplInterface, cplProps))
+    Dim mef As New MEF
 
 #End Region
 
@@ -89,66 +78,12 @@ Public Class MMC
 
         Using l As New oMsgLog(Me.Name, EvtLogSource.SYSTEM, EvtLogVerbosity.Normal, LogEntryType.SuccessAudit)
 
-            'An aggregate catalog that combines multiple catalogs
-            Dim catalog = New AggregateCatalog()
-
-            'Adds all the parts found in the same assembly as the Program class
-            catalog.Catalogs.Add(New AssemblyCatalog(GetType(MMC).Assembly))
-
-            'IMPORTANT!
-            'You will need to adjust this line to match your local path!
-            Dim fi As New FileInfo(System.Reflection.Assembly.GetExecutingAssembly().ToString)
-            catalog.Catalogs.Add(New DirectoryCatalog(Path.Combine(fi.DirectoryName, "modules")))
-
-            'Create the CompositionContainer with the parts in the catalog
-            _container = New CompositionContainer(catalog)
-
-            'Fill the imports of this object
-
             Dim StartExecption As Exception = Nothing
             Try
-                _container.ComposeParts(Me)
+                StartExecption = ReloadModules()
+                If Not StartExecption Is Nothing Then Throw StartExecption
 
-                _msgFactory = New msgFactory(Messages)
-
-                For Each panel As Lazy(Of cplInterface, cplProps) In Cpl
-                    With panel
-                        .Value.Name = .Metadata.Name
-                    End With
-                Next
-                HomeScreen()
-
-                For Each subscr As Lazy(Of SubscribeDef, SubscribeDefprops) In Subscribers
-                    With subscr.Value
-                        .Name = subscr.Metadata.Name
-                        .EntryType = subscr.Metadata.EntryType
-                        .Verbosity = subscr.Metadata.Verbosity
-                        .Source = subscr.Metadata.Source
-                        .Console = subscr.Metadata.Console
-
-                        For Each k As String In .Icon.Keys
-                            Me.icons.Images.Add(.Icon(k))
-                            iconList.Add(k, icons.Images.Count - 1)
-                        Next
-
-                    End With
-                Next
-
-                For Each svr As Lazy(Of svcDef, svcDefprops) In Modules
-                    With svr.Value
-
-                        .Name = svr.Metadata.Name
-                        .defaultPort = svr.Metadata.defaultPort
-                        .defaultStart = svr.Metadata.defaultStart
-                        .udp = svr.Metadata.udp
-
-                        For Each k As String In .Icon.Keys
-                            Me.icons.Images.Add(.Icon(k))
-                            iconList.Add(k, icons.Images.Count - 1)
-                        Next
-
-                    End With
-                Next
+                _msgFactory = New msgFactory(mef.mefmsg)
 
                 logListener = New uListener(
                     My.Settings.LogPort,
@@ -204,6 +139,113 @@ Public Class MMC
 
     End Sub
 
+    Private Function ReloadModules() As Exception
+
+        Dim ret As Exception = Nothing
+
+        Try
+            'An aggregate catalog that combines multiple catalogs
+            Dim catalog = New AggregateCatalog()
+
+            'Adds all the parts found in the same assembly as the Program class
+            catalog.Catalogs.Add(New AssemblyCatalog(GetType(PriPROC6.service.Discovery).Assembly))
+            catalog.Catalogs.Add(New AssemblyCatalog(GetType(MMC).Assembly))
+
+            'IMPORTANT!
+            'You will need to adjust this line to match your local path!
+            Dim fi As New FileInfo(System.Reflection.Assembly.GetExecutingAssembly().ToString)
+            catalog.Catalogs.Add(New DirectoryCatalog(Path.Combine(fi.DirectoryName, "modules")))
+
+            'Create the CompositionContainer with the parts in the catalog
+            _container = New CompositionContainer(catalog)
+
+            'Fill the imports of this object
+            _container.ComposeParts(MEF)
+
+
+            For Each msg As Lazy(Of msgInterface, msgInterfaceData) In MEF.Messages
+                If Not mef.mefmsg.Keys.Contains(String.Format("{0}:{1}", msg.Metadata.verb, msg.Metadata.msgType)) Then
+                    With msg.Value
+                        .msgType = msg.Metadata.msgType
+                    End With
+                    mef.mefmsg.Add(String.Format("{0}:{1}", msg.Metadata.verb, msg.Metadata.msgType), msg.Value)
+                End If
+            Next
+
+            For Each panel As Lazy(Of cplInterface, cplProps) In MEF.Cpl
+                If Not mef.mefcpl.Keys.Contains(panel.Metadata.Name) Then
+                    With panel
+                        .Value.Name = .Metadata.Name
+                        mef.mefcpl.Add(.Metadata.Name, .Value)
+                    End With
+                End If
+            Next
+
+            For Each subscr As Lazy(Of SubscribeDef, SubscribeDefprops) In MEF.Subscribers
+                If Not mef.mefsub.Keys.Contains(subscr.Metadata.Name) Then
+                    With subscr
+                        .Value.setParent(Me, .Metadata)
+                        mef.mefsub.Add(.Metadata.Name, .Value)
+
+                        For Each k As String In .Value.Icon.Keys
+                            Me.icons.Images.Add(.Value.Icon(k))
+                            iconList.Add(k, icons.Images.Count - 1)
+                        Next
+
+                    End With
+
+                End If
+
+                'With subscr.Value
+                '    .Name = subscr.Metadata.Name
+                '    .EntryType = subscr.Metadata.EntryType
+                '    .Verbosity = subscr.Metadata.Verbosity
+                '    .Source = subscr.Metadata.Source
+                '    .Console = subscr.Metadata.Console
+
+                '    For Each k As String In .Icon.Keys
+                '        Me.icons.Images.Add(.Icon(k))
+                '        iconList.Add(k, icons.Images.Count - 1)
+                '    Next
+
+                'End With
+            Next
+
+            For Each svr As Lazy(Of svcDef, svcDefprops) In MEF.Modules
+                If Not mef.mefsvc.Keys.Contains(svr.Metadata.Name) Then
+                    With svr
+                        .Value.setParent(Me, .Metadata)
+                        mef.mefsvc.Add(.Metadata.Name, .Value)
+                        For Each k As String In .Value.Icon.Keys
+                            Me.icons.Images.Add(.Value.Icon(k))
+                            iconList.Add(k, icons.Images.Count - 1)
+                        Next
+                    End With
+                End If
+
+                'With svr.Value
+
+                '    .Name = svr.Metadata.Name
+                '    .defaultPort = svr.Metadata.defaultPort
+                '    .defaultStart = svr.Metadata.defaultStart
+                '    .udp = svr.Metadata.udp
+
+                '    For Each k As String In .Icon.Keys
+                '        Me.icons.Images.Add(.Icon(k))
+                '        iconList.Add(k, icons.Images.Count - 1)
+                '    Next
+
+                'End With
+            Next
+
+        Catch ex As Exception
+            ret = ex
+
+        End Try
+
+        Return ret
+
+    End Function
 #End Region
 
 #Region "Message handlers"
@@ -229,7 +271,7 @@ Public Class MMC
     Private Sub dolog()
 
         Do
-            While LogQ.Count > 0
+            While LogQ.Count > 0 And Not PauseToolStripMenuItem.Checked
                 NewLogEntry(TryCast(msgFactory.Decode(LogQ.Dequeue).thisObject, oMsgLog))
                 Threading.Thread.Sleep(2)
             End While
@@ -351,17 +393,36 @@ Public Class MMC
     End Sub
 
     Private Function thisModule(Named As String) As WritableXML
-        For Each svr As Lazy(Of svcDef, svcDefprops) In Me.Modules
-            If String.Compare(svr.Value.Name, Named, True) = 0 Then
-                Return svr.Value
-            End If
-        Next
-        For Each svr As Lazy(Of SubscribeDef, SubscribeDefprops) In Me.Subscribers
-            If String.Compare(svr.Value.Name, Named, True) = 0 Then
-                Return svr.Value
-            End If
-        Next
+
+        ReloadModules()
+
+        If mef.mefsvc.Keys.Contains(Named) Then
+            Return mef.mefsvc(Named)
+        End If
+
+        If mef.mefsub.Keys.Contains(Named) Then
+            Return mef.mefsub(Named)
+        End If
+
         Throw New Exception(String.Format("Module name {0} not found.", Named))
+
+    End Function
+
+    Private Function thisModule2(Named As String) As svcDef
+
+        ReloadModules()
+
+        For Each svr As svcDef In mef.mefsvc.Values
+            If String.Compare(svr.Name, Named, True) = 0 Then
+                Return svr
+            End If
+        Next
+        For Each svr As SubscribeDef In mef.mefsub.Values
+            If String.Compare(svr.Name, Named, True) = 0 Then
+                Return TryCast(svr, svcDef)
+            End If
+        Next
+        Return Nothing
 
     End Function
 
@@ -375,9 +436,11 @@ Public Class MMC
 
         Else
 
-            Dim l As New oMsgLog(Me.Name, EvtLogSource.SYSTEM)
-            l.LogData.Append(msg.msgNode.OuterXml).AppendLine()
-            LogQ.Enqueue(msgFactory.EncodeRequest("log", l))
+            If ShowBroadcastsToolStripMenuItem.Checked Then
+                Dim l As New oMsgLog(Me.Name, EvtLogSource.SYSTEM)
+                l.LogData.Append(msg.msgNode.OuterXml).AppendLine()
+                LogQ.Enqueue(msgFactory.EncodeRequest("log", l))
+            End If
 
             For Each svc As XmlNode In TryCast(msg.thisObject, oMsgDiscovery).svc
                 Dim o As oServiceBase = thisModule(svc.Attributes("name").Value).readXML(svc)
@@ -408,31 +471,35 @@ Public Class MMC
             Next
 
             Dim delDiscovery As New List(Of String)
-            Dim network As TreeNode = Browser.Nodes("network")
+                Dim network As TreeNode = Browser.Nodes("network")
 
-            For Each k As String In svcMap.Keys
-                svcMap(k).DrawTree(network, iconList)
-                If svcMap(k).IsTimedOut Then
-                    delDiscovery.Add(k)
-                Else
-                    Dim delSvc As New List(Of String)
-                    For Each sk As String In svcMap(k).Keys
-                        If TryCast(svcMap(k).Item(sk), oServiceBase).IsTimedOut Then
-                            delSvc.Add(sk)
-                        End If
-                    Next
-                    For Each d In delSvc
-                        svcMap(k).Remove(d)
-                    Next
-                End If
-            Next
-            For Each d As String In delDiscovery
-                svcMap.Remove(d)
-            Next
+                For Each k As String In svcMap.Keys
+                    thisModule2("discovery").DrawTree(network, mef, svcMap(k), iconList)
+                    If svcMap(k).IsTimedOut Then
+                        delDiscovery.Add(k)
 
-            propSvcMap.svcMap = svcMap
+                    Else
+                        Dim delSvc As New List(Of String)
+                        For Each sk As String In svcMap(k).Keys
+                            If TryCast(svcMap(k).Item(sk), oServiceBase).IsTimedOut Then
+                                delSvc.Add(sk)
+                            End If
+                        Next
 
-        End If
+                        For Each d In delSvc
+                            svcMap(k).Remove(d)
+                        Next
+
+                    End If
+                Next
+
+                For Each d As String In delDiscovery
+                    svcMap.Remove(d)
+                Next
+
+                propSvcMap.svcMap = svcMap
+
+            End If
 
     End Sub
 
@@ -440,70 +507,102 @@ Public Class MMC
 
 #Region "Panels"
 
-    Private Sub HomeScreen()
-        SetPanel("home", Nothing)
-    End Sub
-
     Private Sub Browser_AfterSelect(sender As Object, e As TreeViewEventArgs) Handles Browser.AfterSelect
 
         Dim params As String() = e.Node.Name.Split("\")
+        Dim useCpl As Object = Nothing
+
         Select Case params(0).ToLower
             Case "network"
-                HomeScreen()
+                useCpl = SetPanel("home")
 
             Case Else
                 With svcMap(params(0))
                     Select Case UBound(params)
                         Case 0
-                            Dim pnlName As String = String.Empty
-                            Dim useCpl As Object = TryCast(svcMap(params(0)), oDiscovery).useCpl(pnlName, params)
-                            If Not IsNothing(useCpl) Then
-                                SetPanel(pnlName, useCpl)
-                            Else
-                                TabPage1.Controls.Clear()
-
-                            End If
+                            useCpl = thisModule2("discovery").useCpl(
+                                    PropertyObject(params(0)),
+                                    params
+                            )
 
                         Case Else
                             If UBound(params) = 1 And String.Compare(params(1), "Subscribers", True) = 0 Then
                                 TabPage1.Controls.Clear()
 
                             Else
-                                For Each svc As Object In .values
-                                    If String.Compare(TryCast(svc, oServiceBase).Name, params(1), True) = 0 Then
 
-                                        Dim pnlName As String = String.Empty
-                                        Dim useCpl As Object = TryCast(svc, oServiceBase).useCpl(pnlName, params)
-                                        If Not IsNothing(useCpl) Then
-                                            SetPanel(pnlName, useCpl)
-                                        Else
-                                            TabPage1.Controls.Clear()
-
+                                Dim thisSvc As Object = PropertyObject(params(0), params(1))
+                                If Not thisSvc Is Nothing Then
+                                    For Each svr As svcDef In mef.mefsvc.Values
+                                        If String.Compare(svr.Name, params(1), True) = 0 Then
+                                            useCpl = svr.useCpl(thisSvc, params)
+                                            Exit For
                                         End If
+                                    Next
+
+                                    If useCpl Is Nothing Then
+                                        For Each svr As SubscribeDef In mef.mefsub.Values
+                                            If String.Compare(svr.Name, params(1), True) = 0 Then
+                                                useCpl = svr.useCpl(thisSvc, params)
+                                                Exit For
+                                            End If
+                                        Next
+
                                     End If
-                                Next
+
+                                End If
+
                             End If
+
                     End Select
 
                 End With
 
         End Select
 
+        If Not useCpl Is Nothing Then
+            With TabPage1.Controls
+                .Clear()
+                .Add(useCpl)
+                .Item(0).Dock = DockStyle.Fill
+            End With
+
+        Else
+            TabPage1.Controls.Clear()
+
+        End If
+
     End Sub
 
-    Sub SetPanel(PanelName As String, useCpl As Object)
-        For Each panel As Lazy(Of cplInterface, cplProps) In Cpl
-            If String.Compare(panel.Value.Name, PanelName, True) = 0 Then
-                panel.Value.LoadObject(useCpl)
-                With TabPage1.Controls
-                    .Clear()
-                    .Add(panel.Value.Cpl)
-                    .Item(0).Dock = DockStyle.Fill
-                End With
+    Private Function PropertyObject(ServerName As String, Optional ObjectType As String = "discovery") As oServiceBase
 
+        If String.Compare(ObjectType, "discovery", True) = 0 Then
+            Return svcMap(ServerName)
+
+        Else
+            With svcMap(ServerName)
+                For Each svc As oServiceBase In .values
+                    If String.Compare(svc.Name, ObjectType, True) = 0 Then
+                        Return svc
+                    End If
+                Next
+            End With
+
+        End If
+        Return Nothing
+
+    End Function
+
+    Private Function SetPanel(PanelName As String) As Object
+        Dim Cpl As Object = Nothing
+        For Each panel As cplInterface In mef.mefcpl.Values
+            If String.Compare(panel.Name, PanelName, True) = 0 Then
+                Return panel.useCpl(Nothing, Nothing)
             End If
         Next
-    End Sub
+        Return Nothing
+
+    End Function
 
     Private Sub SaveProperty(Sender As Object, e As CmdEventArgs)
         With e
@@ -550,35 +649,67 @@ Public Class MMC
     End Sub
 
     Private Sub ContextMenu_Opening(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles ContextMenu.Opening
+
+        e.Cancel = True
         Dim params As String() = Browser.SelectedNode.Name.Split("\")
-        Select Case params(0).ToLower
-            Case "network"
-                e.Cancel = True
+        Dim p As oServiceBase
 
-            Case Else
-                With svcMap(params(0))
-                    Select Case UBound(params)
-                        Case 0
-                            .ContextMenu(sender, e, params)
+        If String.Compare(params(0), "network", True) = 0 Then
+            Exit Sub
+        End If
 
-                        Case Else
-                            If UBound(params) = 1 And String.Compare(params(1), "Subscribers", True) = 0 Then
-                                .ContextMenu(sender, e, params)
+        With svcMap(params(0))
+            Select Case UBound(params)
+                Case 0
+                    e.Cancel = False
+                    p = PropertyObject(params(0))
 
-                            Else
-                                For Each svc As Object In .values
-                                    If String.Compare(TryCast(svc, oServiceBase).Name, params(1), True) = 0 Then
-                                        TryCast(svc, oServiceBase).ContextMenu(sender, e, params)
-                                        Exit For
-                                    End If
-                                Next
-                            End If
+                Case Else
+                    If UBound(params) = 1 And String.Compare(params(1), "Subscribers", True) = 0 Then
+                        e.Cancel = False
+                        p = PropertyObject(params(0))
 
-                    End Select
+                    Else
+                        e.Cancel = False
+                        p = PropertyObject(params(0), params(1))
+                    End If
 
-                End With
+            End Select
 
-        End Select
+        End With
+
+        If Not e.Cancel Then
+            For Each svr As svcDef In mef.mefsvc.Values
+                If String.Compare(svr.Name, p.Name, True) = 0 Then
+                    svr.ContextMenu(sender, e, p, params)
+                    Exit Sub
+                End If
+            Next
+
+            For Each svr As SubscribeDef In mef.mefsub.Values
+                If String.Compare(svr.Name, params(1), True) = 0 Then
+                    svr.ContextMenu(sender, e, p, params)
+                    Exit Sub
+                End If
+            Next
+
+        End If
+
+    End Sub
+
+    Private Sub ClearToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ClearToolStripMenuItem.Click
+        Console.Clear()
+
+    End Sub
+
+    Private Sub ShowBroadcastsToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ShowBroadcastsToolStripMenuItem.Click
+        ShowBroadcastsToolStripMenuItem.Checked = Not ShowBroadcastsToolStripMenuItem.Checked
+
+    End Sub
+
+    Private Sub PauseToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles PauseToolStripMenuItem.Click
+        PauseToolStripMenuItem.Checked = Not PauseToolStripMenuItem.Checked
+
     End Sub
 
 #End Region
