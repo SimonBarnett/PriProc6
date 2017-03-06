@@ -3,14 +3,11 @@ Imports PriPROC6.Interface.Cpl
 Imports System.Windows.Forms
 Imports PriPROC6.svcMessage
 
-<Export(GetType(cplInterface))>
-<ExportMetadata("Name", "Bubble")>
 Public Class cplBubble : Inherits cplBase
 
-    Public Overrides Sub LoadObject(ByRef o As Object)
+    Public Overrides Function useCpl(ByRef o As Object, ParamArray args() As String) As Object
+        Return New cplBubblePage(o)
 
-        thisPanel = New cplBubblePage(o)
-
-    End Sub
+    End Function
 
 End Class

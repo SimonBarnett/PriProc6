@@ -10,6 +10,8 @@ Imports PriPROC6.Interface.Cpl
 Imports PriPROC6.PriSock
 Imports PriPROC6.svcMessage
 Imports System.Xml
+Imports PriPROC6.Services.WebRelay
+Imports PriPROC6.Services.Loader
 
 Public Class MMC
 
@@ -160,10 +162,10 @@ Public Class MMC
             _container = New CompositionContainer(catalog)
 
             'Fill the imports of this object
-            _container.ComposeParts(MEF)
+            _container.ComposeParts(mef)
 
 
-            For Each msg As Lazy(Of msgInterface, msgInterfaceData) In MEF.Messages
+            For Each msg As Lazy(Of msgInterface, msgInterfaceData) In mef.Messages
                 If Not mef.mefmsg.Keys.Contains(String.Format("{0}:{1}", msg.Metadata.verb, msg.Metadata.msgType)) Then
                     With msg.Value
                         .msgType = msg.Metadata.msgType
@@ -172,7 +174,7 @@ Public Class MMC
                 End If
             Next
 
-            For Each panel As Lazy(Of cplInterface, cplProps) In MEF.Cpl
+            For Each panel As Lazy(Of cplInterface, cplProps) In mef.Cpl
                 If Not mef.mefcpl.Keys.Contains(panel.Metadata.Name) Then
                     With panel
                         .Value.Name = .Metadata.Name
@@ -181,7 +183,7 @@ Public Class MMC
                 End If
             Next
 
-            For Each subscr As Lazy(Of SubscribeDef, SubscribeDefprops) In MEF.Subscribers
+            For Each subscr As Lazy(Of SubscribeDef, SubscribeDefprops) In mef.Subscribers
                 If Not mef.mefsub.Keys.Contains(subscr.Metadata.Name) Then
                     With subscr
                         .Value.setParent(Me, .Metadata)
@@ -211,7 +213,7 @@ Public Class MMC
                 'End With
             Next
 
-            For Each svr As Lazy(Of svcDef, svcDefprops) In MEF.Modules
+            For Each svr As Lazy(Of svcDef, svcDefprops) In mef.Modules
                 If Not mef.mefsvc.Keys.Contains(svr.Metadata.Name) Then
                     With svr
                         .Value.setParent(Me, .Metadata)
@@ -442,6 +444,7 @@ Public Class MMC
                 LogQ.Enqueue(msgFactory.EncodeRequest("log", l))
             End If
 
+            Dim loaders As New List(Of XmlNode)
             For Each svc As XmlNode In TryCast(msg.thisObject, oMsgDiscovery).svc
                 Dim o As oServiceBase = thisModule(svc.Attributes("name").Value).readXML(svc)
                 AddHandler o.onSendCmd, AddressOf SaveProperty
@@ -460,9 +463,18 @@ Public Class MMC
                             If Not svcMap(o.Host).Keys.Contains(o.Name.ToLower) Then
                                 svcMap(o.Host).Add(o.Name.ToLower, o)
                                 TryCast(svcMap(o.Host).Item(o.Name.ToLower), oServiceBase).Parent = svcMap(o.Host)
+
                             Else
                                 TryCast(svcMap(o.Host).Item(o.Name.ToLower), oServiceBase).Update(o)
+
                             End If
+
+                        End If
+
+                        If String.Compare(o.Name, "loader", True) = 0 Then
+                            For Each priweb As XmlNode In svc.SelectNodes("priweb")
+                                loaders.Add(priweb)
+                            Next
 
                         End If
 
@@ -471,35 +483,45 @@ Public Class MMC
             Next
 
             Dim delDiscovery As New List(Of String)
-                Dim network As TreeNode = Browser.Nodes("network")
+            Dim network As TreeNode = Browser.Nodes("network")
 
-                For Each k As String In svcMap.Keys
-                    thisModule2("discovery").DrawTree(network, mef, svcMap(k), iconList)
-                    If svcMap(k).IsTimedOut Then
-                        delDiscovery.Add(k)
+            For Each k As String In svcMap.Keys
+                thisModule2("discovery").DrawTree(network, mef, svcMap(k), iconList)
+                If svcMap(k).IsTimedOut Then
+                    delDiscovery.Add(k)
 
-                    Else
-                        Dim delSvc As New List(Of String)
-                        For Each sk As String In svcMap(k).Keys
-                            If TryCast(svcMap(k).Item(sk), oServiceBase).IsTimedOut Then
-                                delSvc.Add(sk)
-                            End If
+                Else
+                    Dim delSvc As New List(Of String)
+                    For Each sk As String In svcMap(k).Keys
+                        If TryCast(svcMap(k).Item(sk), oServiceBase).IsTimedOut Then
+                            delSvc.Add(sk)
+                        End If
+                    Next
+
+                    For Each d In delSvc
+                        svcMap(k).Remove(d)
+                    Next
+
+                End If
+            Next
+
+            For Each d As String In delDiscovery
+                svcMap.Remove(d)
+            Next
+
+            For Each h As String In svcMap.Keys
+                For Each s As oServiceBase In svcMap(h).values
+                    If String.Compare(s.Name, "webrelay", True) = 0 Then
+                        For Each web As PriWeb In s.values
+                            web.SetoDataServers(loaders, svcMap)
                         Next
-
-                        For Each d In delSvc
-                            svcMap(k).Remove(d)
-                        Next
-
                     End If
                 Next
+            Next
 
-                For Each d As String In delDiscovery
-                    svcMap.Remove(d)
-                Next
+            propSvcMap.svcMap = svcMap
 
-                propSvcMap.svcMap = svcMap
-
-            End If
+        End If
 
     End Sub
 
@@ -608,6 +630,7 @@ Public Class MMC
         With e
             Using cli As New iClient(.Server, .Port)
                 Dim resp = msgFactory.Decode(cli.Send(msgFactory.EncodeRequest("cmd", .Message)))
+                e.errCode = resp.ErrCde
                 If Not resp.ErrCde = 200 Then
                     MsgBox(resp.errMsg)
                 Else

@@ -78,7 +78,6 @@
     <Compile Include="Messages\msgDiscoveryRequest.vb" />
     <Compile Include="Messages\msgDiscoveryResponse.vb" />
     <Compile Include="Messages\msgGenericResponse.vb" />
-    <Compile Include="Messages\msgLoading.vb" />
     <Compile Include="Messages\msgLog.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
@@ -95,19 +94,13 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="Object\oMsgLoading.vb" />
     <Compile Include="Object\oMsgCmd.vb" />
     <Compile Include="Object\oMsgDiscovery.vb" />
     <Compile Include="Object\oMsgLog.vb" />
     <Compile Include="ServiceObjects\derived\oDiscovery.vb" />
     <Compile Include="ServiceObjects\base\oService.vb" />
     <Compile Include="ServiceObjects\base\oSubscriber.vb" />
-    <Compile Include="ServiceObjects\SubObjects\LoadAttempt.vb" />
-    <Compile Include="ServiceObjects\SubObjects\LoadRow.vb" />
-    <Compile Include="ServiceObjects\SubObjects\PriEnv.vb" />
-    <Compile Include="ServiceObjects\SubObjects\PriUser.vb" />
     <Compile Include="ServiceObjects\PropertyPages\propSvcMap.vb" />
-    <Compile Include="ServiceObjects\SubObjects\Warning.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">

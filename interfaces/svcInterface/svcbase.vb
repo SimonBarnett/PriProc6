@@ -143,11 +143,11 @@ Public MustInherit Class svcbase
         End Get
     End Property
 
-    Public Sub Config(ByRef Svc As oService, ByRef Log As oMsgLog) Implements svcDef.Config
+    Public Sub Config(ByRef Svc As List(Of Object), ByRef Log As oMsgLog) Implements svcDef.Config
         ConfigMsg(Svc, Log)
     End Sub
 
-    Public Overridable Sub ConfigMsg(ByRef Svc As oService, ByRef Log As oMsgLog)
+    Public Overridable Sub ConfigMsg(ByRef Svc As List(Of Object), ByRef Log As oMsgLog)
 
     End Sub
 
@@ -399,6 +399,9 @@ Public MustInherit Class svcbase
             Finally
                 If Not _svcstate = eServiceState.stopped Then
                     _svcstate = eServiceState.started
+
+                Else
+                    _thisiListener.disposeMe(l)
 
                 End If
 

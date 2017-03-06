@@ -10,6 +10,7 @@ Imports Priproc6.Interface.Cpl
 Imports System.ComponentModel
 Imports System.Windows.Forms
 Imports Priproc6
+Imports Priproc6.Services.Loader
 
 <Export(GetType(svcDef))>
 <ExportMetadata("Name", "discovery")>
@@ -286,39 +287,43 @@ Public Class Discovery
                             )
 
                         Case eVerb.Response
-                            For Each svc As XmlNode In TryCast(msg.thisObject, oMsgDiscovery).svc
-                                Dim o As oServiceBase = thisModule(svc.Attributes("name").Value).readXML(svc)
-                                Select Case o.Name.ToLower
-                                    Case "discovery"
-                                        Dim p As oDiscovery = TryCast(o, oDiscovery)
-                                        For Each SVR As svcDef In LoadedModules
-                                            If String.Compare(SVR.Name, "webrelay", True) = 0 Then
-                                                SVR.Config(p, thisLog)
-                                            End If
-                                        Next
-
-                                    Case "webrelay"
-                                        'For Each p As PriWeb In TryCast(o, oWebRelay).values
-                                        '    'Console.Write(p.Settings("port"))
-                                        'Next
-
-                                    Case "loader"
-                                        'Dim p As oLoader = TryCast(o, oLoader)
-                                        'For Each SVR As svcDef In LoadedModules
-                                        '    If String.Compare(SVR.Name, "webrelay", True) = 0 Then
-                                        '        SVR.Config(p, thisLog)
-                                        '    End If
-                                        'Next
-
-                                        'Case "console"
-                                        '    Dim P As oSubConsole = TryCast(o, oSubConsole)
-
-                                        'Case "broadcast"
-                                        '    Dim P As oSubBroadcast = TryCast(o, oSubBroadcast)
-
-                                End Select
-
+                            For Each SVR As svcDef In LoadedModules
+                                SVR.Config(TryCast(msg.thisObject, oMsgDiscovery).svc, thisLog)
                             Next
+
+                            'For Each svc As XmlNode In TryCast(msg.thisObject, oMsgDiscovery).svc
+                            '    Dim o As oServiceBase = thisModule(svc.Attributes("name").Value).readXML(svc)
+                            '    Select Case o.Name.ToLower
+                            '        Case "discovery"
+                            '            Dim p As oDiscovery = TryCast(o, oDiscovery)
+                            '            For Each SVR As svcDef In LoadedModules
+                            '                If String.Compare(SVR.Name, "webrelay", True) = 0 Then
+                            '                    SVR.Config(p, thisLog)
+                            '                End If
+                            '            Next
+
+                            '        Case "webrelay"
+                            '            'For Each p As PriWeb In TryCast(o, oWebRelay).values
+                            '            '    'Console.Write(p.Settings("port"))
+                            '            'Next
+
+                            '        Case "loader"
+                            '            Dim p As oLoader = TryCast(o, oLoader)
+                            '            For Each SVR As svcDef In LoadedModules
+                            '                If String.Compare(SVR.Name, "webrelay", True) = 0 Then
+                            '                    SVR.Config(p, thisLog)
+                            '                End If
+                            '            Next
+
+                            '            'Case "console"
+                            '            '    Dim P As oSubConsole = TryCast(o, oSubConsole)
+
+                            '            'Case "broadcast"
+                            '            '    Dim P As oSubBroadcast = TryCast(o, oSubBroadcast)
+
+                            '    End Select
+
+                            'Next
 
                         Case Else
                             Throw New NotImplementedException()

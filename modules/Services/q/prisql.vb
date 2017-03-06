@@ -5,11 +5,11 @@ Imports PriPROC6.svcMessage
 
 Public Class prisql : Implements IDisposable
 
-    Private thisconfig As svcConfig
+    Private _db As String
     Private log As oMsgLog
 
-    Sub New(ByRef Log As oMsgLog, ByRef thisConfig As svcConfig)
-        Me.thisconfig = thisConfig
+    Sub New(ByRef Log As oMsgLog, db As String)
+        _db = db
         Me.log = Log
     End Sub
 
@@ -19,7 +19,7 @@ Public Class prisql : Implements IDisposable
         Get
             Return String.Format(
                 "Server={0};Trusted_Connection=True;",
-                thisconfig.regValue(False, "PriorityDB")
+                _db
             )
         End Get
     End Property
@@ -28,7 +28,7 @@ Public Class prisql : Implements IDisposable
         Get
             log.LogData.AppendFormat(
                 "Opening datasource: {0}",
-                thisconfig.regValue(False, "PriorityDB")
+                _db
             ).AppendLine()
             Dim _connection As New SqlConnection()
             With _connection

@@ -92,8 +92,12 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="cpl\webrelay\PriWeb.vb" />
-    <Compile Include="cpl\webrelay\prop_env.vb" />
     <Compile Include="EndPoints.vb" />
+    <Compile Include="prop_env.vb" />
+    <Compile Include="prop_LogServer.vb" />
+    <Compile Include="prop_oDataServers.vb" />
+    <Compile Include="prop_User.vb" />
+    <Compile Include="shared.vb" />
     <Compile Include="WebRelay.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
@@ -170,6 +174,10 @@
     <ProjectReference Include="..\..\messages\svcMessage.vbproj">
       <Project>{ada93d6f-4915-4a49-94d1-318347ed1a1d}</Project>
       <Name>svcMessage</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\q\Services.Loader.vbproj">
+      <Project>{a82ef03d-3e04-4560-bbb2-4aa9a12bc152}</Project>
+      <Name>Services.Loader</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -1,7 +1,5 @@
 ﻿Imports System.ComponentModel
-Imports PriPROC6.Interface.Message
-Imports PriPROC6.svcMessage
-Imports PriPROC6.Services.Loader
+Imports System.Xml
 
 Public Class Prop_Env : Inherits System.ComponentModel.StringConverter
 
@@ -17,17 +15,19 @@ Public Class Prop_Env : Inherits System.ComponentModel.StringConverter
     ) As System.ComponentModel.TypeConverter.StandardValuesCollection
 
         Dim strItems As New List(Of String)
-        'For Each discovery As oDiscovery In propSvcMap.svcMap.Values
-        '    For Each svc As oServiceBase In discovery.values
-        '        If Not IsNothing(TryCast(svc, oLoader)) Then
-        '            With TryCast(svc, oLoader)
-        '                For Each env As PriEnv In .values
-        '                    strItems.Add(String.Format("{0}\{1}", .Host, env.Name))
-        '                Next
-        '            End With
-        '        End If
-        '    Next
-        'Next
+        strItems.Add(" ")
+        For Each oDataServer As XmlNode In oDataServers
+            If String.Compare(
+                oDataServer.Attributes("hostname").Value,
+                TryCast(context.Instance, PriWeb).Service,
+                True) = 0 Then
+
+                For Each e As XmlNode In oDataServer.SelectNodes("env")
+                    strItems.Add(e.Attributes("name").Value)
+                Next
+
+            End If
+        Next
         Return New StandardValuesCollection(strItems)
 
     End Function

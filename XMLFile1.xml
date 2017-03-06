@@ -1,0 +1,67 @@
+﻿<response>
+  <type>discovery</type>
+  <source>MARCHHARE</source>
+  <timestamp>31/01/2017 13:54:26</timestamp>
+  <error>
+    <code>200</code>
+    <message />
+  </error>
+  <service name="discovery" host="MARCHHARE" svctype="service" port="8090" version="1.0.0.0">
+    <BroadcastDelay>30</BroadcastDelay>
+    <mefdir>\\WALRUS\nas\PriorityMobile\Server\PriProc6\bin\Debug\modules</mefdir>
+    <dormant name="loader" svctype="service" />
+  </service>
+  <service name="webrelay" host="MARCHHARE" svctype="service" port="8092" version="1.0.0.0">
+    <relay endpoint="marchhare/app">
+      <sitename>Default Web Site</sitename>
+      <hostname>marchhare</hostname>
+      <port>80</port>
+      <physicalpath>C:\Users\Administrator\Documents\Visual Studio 2015\Projects\PriProc6\web</physicalpath>
+      <virtual>/app</virtual>
+      <appSettings>
+        <loadport>8093</loadport>
+        <service>MARCHHARE</service>
+        <environment>demo</environment>
+        <loadingtimeout>60</loadingtimeout>
+        <logport>8090</logport>
+      </appSettings>
+      <endpoints>
+        <endpoint name="testfeed" type="feed" />
+        <endpoint name="loadhandler" type="handler" />
+        <endpoint name="testhandler" type="handler" />
+      </endpoints>
+    </relay>
+    <relay endpoint="MARCHHARE:8080">
+      <sitename>test</sitename>
+      <hostname>MARCHHARE</hostname>
+      <port>8080</port>
+      <physicalpath>C:\Users\Administrator\Documents\Visual Studio 2015\Projects\PriProc6\web</physicalpath>
+      <virtual>/</virtual>
+      <appSettings>
+        <loadport>8093</loadport>
+        <service>MARCHHARE</service>
+        <environment>demo</environment>
+        <loadingtimeout>60</loadingtimeout>
+        <logport>8090</logport>
+      </appSettings>
+      <endpoints>
+        <endpoint name="testfeed" type="feed" />
+        <endpoint name="loadhandler" type="handler" />
+        <endpoint name="testhandler" type="handler" />
+      </endpoints>
+    </relay>
+  </service>
+  <service name="broadcast" host="MARCHHARE" version="1.0.0.0" svctype="subscriber">
+    <filter EntryType="31" Verbosity="99" Source="7" />
+    <broadcastport>8100</broadcastport>
+  </service>
+  <service name="console" host="MARCHHARE" version="1.0.0.0" svctype="subscriber">
+    <filter EntryType="31" Verbosity="99" Source="7" />
+  </service>
+  <service name="EventLog" host="MARCHHARE" version="1.0.0.0" svctype="subscriber">
+    <filter EntryType="31" Verbosity="99" Source="7" />
+    <MaximumKilobytes>4096</MaximumKilobytes>
+    <MinimumRetentionDays>7</MinimumRetentionDays>
+  </service>
+</response>
+

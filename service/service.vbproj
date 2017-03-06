@@ -140,6 +140,10 @@
       <Project>{4C9DCB1A-31C7-49D9-AD71-2677B8C34F3D}</Project>
       <Name>Interface.BaseSvc</Name>
     </ProjectReference>
+    <ProjectReference Include="..\modules\Services\q\Services.Loader.vbproj">
+      <Project>{A82EF03D-3E04-4560-BBB2-4AA9A12BC152}</Project>
+      <Name>Services.Loader</Name>
+    </ProjectReference>
     <ProjectReference Include="..\submodules\libRegistry\RegistryClassLibrary\RegistryClassLibrary.vbproj">
       <Project>{35885c1d-46ec-415d-9368-bcf2cdeb4dfd}</Project>
       <Name>RegistryClassLibrary</Name>

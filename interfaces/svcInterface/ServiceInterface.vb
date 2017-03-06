@@ -17,7 +17,7 @@ Public Interface svcDef : Inherits svcDefintion
     Function tcpByte(ByVal e As Byte(), RemoteEndpoint As String) As Byte()
 
     Sub udpByte(ByVal e As Byte(), RemoteEndpoint As String)
-    Sub Config(ByRef Svc As oService, ByRef Log As oMsgLog)
+    Sub Config(ByRef Svc As List(Of Object), ByRef Log As oMsgLog)
 
 End Interface
 

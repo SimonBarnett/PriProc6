@@ -54,6 +54,16 @@ Public Class CmdEventArgs : Inherits EventArgs
         End Set
     End Property
 
+    Private _ErrCode As Integer
+    Public Property errCode As Integer
+        Get
+            Return _ErrCode
+        End Get
+        Set(value As Integer)
+            _ErrCode = value
+        End Set
+    End Property
+
 End Class
 
 Public MustInherit Class oServiceBase : Inherits oDictionary
@@ -98,6 +108,7 @@ Public MustInherit Class oServiceBase : Inherits oDictionary
             _Version = .ModuleVersion
             _ServiceType = .ServiceType
             _LastSeen = Now
+            _BroacastXML = .BroacastXML
         End With
     End Sub
 

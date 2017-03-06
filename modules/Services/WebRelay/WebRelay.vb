@@ -11,9 +11,9 @@ Imports Microsoft.Web.Administration
 Imports PriPROC6.Interface.Service
 Imports PriPROC6.Interface.Message
 Imports PriPROC6.svcMessage
-Imports PriPROC6.Services.Loader
 
 Imports PriPROC6.Interface.Cpl
+Imports PriPROC6.Services.Loader
 
 <Export(GetType(svcDef))>
 <ExportMetadata("Name", "webrelay")>
@@ -229,7 +229,6 @@ Public Class webRelay : Inherits svcbase
                                         End If
                                     Next
 
-
                                     If Not f Then
                                         changes = True
                                         changeLog.LogData.AppendFormat("Adding Setting [{0}]={1}", k, .Args(k)).AppendLine()
@@ -238,17 +237,39 @@ Public Class webRelay : Inherits svcbase
                                         addelement("value") = .Args(k)
                                         appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).Add(addelement)
                                     End If
+
                                 End If
-                                    Next
+                            Next
 
                             If changes Then
-                                sm.CommitChanges()
-                                changeLog.EntryType = LogEntryType.SuccessAudit
+                                Dim c As Integer = 0
+                                Dim cmmit As Boolean = False
+
+                                Do
+                                    Try
+                                        sm.CommitChanges()
+                                        cmmit = True
+                                        changeLog.EntryType = LogEntryType.SuccessAudit
+                                        Return msgFactory.EncodeResponse("generic", 200)
+
+                                    Catch ex As Exception
+                                        c += 1
+                                        If c > 9 Then
+                                            changeLog.EntryType = LogEntryType.FailureAudit
+                                            changeLog.setException(ex)
+                                            Return msgFactory.EncodeResponse("generic", 400, ex.Message)
+
+                                        Else
+                                            Threading.Thread.Sleep(500)
+                                        End If
+
+                                    End Try
+
+                                Loop Until c > 9 Or cmmit
+
                             End If
 
                         End Using
-
-                        Return msgFactory.EncodeResponse("generic", 200)
 
                     End With
 
@@ -325,18 +346,48 @@ Public Class webRelay : Inherits svcbase
 
 #Region "Config"
 
-    Overrides Sub configMSG(ByRef Svc As oService, ByRef Log As oMsgLog)
+    Overrides Sub configMSG(ByRef Svc As List(Of Object), ByRef Log As oMsgLog)
         Log.svcType = Me.Name
-        Select Case Svc.Name.ToLower
-            Case "discovery"
-                ConfigDiscovery(TryCast(Svc, oDiscovery), Log)
 
-            Case "loader"
-                'ConfigLoader(TryCast(Svc, oLoader), Log)
+        'For Each s As XmlNode In Svc
+        '    Select Case s.Attributes("name").Value.ToLower
+        '        Case "loader"
+        '            Dim o As New oLoader(s)
+        '            With o
+        '                For Each priweb As XmlNode In s.SelectNodes("priweb")
 
-            Case Else
+        '                    If Not PriPROC6.oDataInstall.Contains(priweb.Attributes("hostname").Value) Then
+        '                        oDataInstall.Add(priweb.Attributes("hostname").Value)
+        '                    End If
 
-        End Select
+        '                    '.Add(
+        '                    '    priweb.Attributes("hostname").Value,
+        '                    '    New oPriWeb(
+        '                    '        priweb.Attributes("database").Value,
+        '                    '        priweb.Attributes("hostname").Value,
+        '                    '        priweb.Attributes("path").Value,
+        '                    '        priweb.Attributes("tabini").Value
+        '                    '    )
+        '                    ')
+
+        '                    'With TryCast(o(priweb.Attributes("hostname").Value), oPriWeb)
+        '                    '    For Each env As XmlNode In priweb.SelectNodes("env")
+        '                    '        .Environments.Add(
+        '                    '            env.Attributes("name").Value,
+        '                    '            New oEnv(
+        '                    '                o(priweb.Attributes("hostname").Value),
+        '                    '                env.Attributes("name").Value
+        '                    '           )
+        '                    '        )
+        '                    '    Next
+
+        '                    'End With
+
+        '                Next
+        '            End With
+
+        '    End Select
+        'Next
 
     End Sub
 

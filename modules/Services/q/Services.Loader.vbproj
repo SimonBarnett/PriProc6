@@ -44,6 +44,10 @@
     <OptionInfer>On</OptionInfer>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Web.Administration, Version=7.9.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Windows\assembly\GAC_MSIL\Microsoft.Web.Administration\7.0.0.0__31bf3856ad364e35\Microsoft.Web.Administration.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Data" />
@@ -68,12 +72,26 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="cpl\Bubble\BubbleDetail.Designer.vb">
+      <DependentUpon>BubbleDetail.vb</DependentUpon>
+    </Compile>
+    <Compile Include="cpl\Bubble\BubbleDetail.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="cpl\Bubble\cplBubblePage.Designer.vb">
+      <DependentUpon>cplBubblePage.vb</DependentUpon>
+    </Compile>
+    <Compile Include="cpl\Bubble\cplBubblePage.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="cpl\Bubble\ListViewItemComparer.vb" />
     <Compile Include="cpl\cplLoader.vb">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="cpl\oLoader.vb" />
+    <Compile Include="cpl\PriWeb\oEnv.vb" />
+    <Compile Include="cpl\PriWeb\oPriWeb.vb" />
     <Compile Include="Loader.vb" />
-    <Compile Include="LoadQ.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -90,9 +108,19 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="prisql.vb" />
-    <Compile Include="PriUsers.vb" />
+    <Compile Include="SubObjects\LoadAttempt.vb" />
+    <Compile Include="SubObjects\LoadRow.vb" />
+    <Compile Include="SubObjects\PriEnv.vb" />
+    <Compile Include="SubObjects\PriUser.vb" />
+    <Compile Include="SubObjects\Warning.vb" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="cpl\Bubble\BubbleDetail.resx">
+      <DependentUpon>BubbleDetail.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="cpl\Bubble\cplBubblePage.resx">
+      <DependentUpon>cplBubblePage.vb</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="cpl\cplLoader.resx">
       <DependentUpon>cplLoader.vb</DependentUpon>
     </EmbeddedResource>

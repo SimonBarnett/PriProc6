@@ -3,7 +3,6 @@ Imports System.ComponentModel
 Imports System.Windows.Forms
 Imports PriPROC6.Interface.Message
 Imports PriPROC6.svcMessage
-Imports PriPROC6.Services.Loader
 Imports Microsoft.Web.Administration
 
 Public Class PriWeb
@@ -69,6 +68,12 @@ Public Class PriWeb
 #End Region
 
 #Region "Properties"
+
+    Public Sub SetoDataServers(oDataServers As List(Of XmlNode), SvcMap As Dictionary(Of String, oDiscovery))
+        share.oDataServers = oDataServers
+        share.SvcMap = SvcMap
+
+    End Sub
 
     <CategoryAttribute("Host"),
     Browsable(True),
@@ -203,58 +208,301 @@ Public Class PriWeb
         End Get
     End Property
 
-    <Browsable(False)>
+    <CategoryAttribute("Settings"),
+    DescriptionAttribute("The database connection string."),
+    Browsable(True),
+    [ReadOnly](True)>
+    Public Property Database() As String
+        Get
+            Try
+                Return Settings("db")
+            Catch ex As Exception
+                Return String.Empty
+            End Try
+
+        End Get
+        Set(ByVal value As String)
+            Settings("db") = value
+        End Set
+    End Property
+
+    <CategoryAttribute("Settings"),
+    DescriptionAttribute("The location to store bubbles."),
+    Browsable(True),
+    [ReadOnly](True)>
+    Public Property SavePath() As String
+        Get
+            Try
+                Return Settings("path")
+            Catch ex As Exception
+                Return String.Empty
+            End Try
+
+        End Get
+        Set(ByVal value As String)
+            Settings("path") = value
+        End Set
+    End Property
+
+    <CategoryAttribute("oData Server"),
+    DescriptionAttribute("The tabula.ini file to use for oData calls."),
+    Browsable(True),
+    [ReadOnly](True)>
+    Public Property TabulaINI() As String
+        Get
+            Try
+                Return Settings("tabini")
+            Catch ex As Exception
+                Return String.Empty
+            End Try
+
+        End Get
+        Set(ByVal value As String)
+            Settings("tabini") = value
+        End Set
+    End Property
+
+    <TypeConverter(GetType(Prop_oDataServers)),
+    CategoryAttribute("oData Server"),
+    DescriptionAttribute("The odata server to post bubbles.")>
     Public Property Service() As String
         Get
-            Return Settings("service")
+            Try
+                Return Settings("service")
+
+            Catch ex As Exception
+                Return String.Empty
+
+            End Try
+
         End Get
         Set(ByVal value As String)
-            Settings("service") = value
+            If _webrelay.mmc Then
+
+                Dim f As Boolean = False
+                Dim e As CmdEventArgs = New CmdEventArgs(_webrelay.Host, _webrelay.Port)
+                e.Message = New oMsgCmd
+
+                With TryCast(e.Message, oMsgCmd).Args
+                    .Add("endpoint", Me.Endpoint)
+                    .Add("service", value)
+                    For Each oDataServer As XmlNode In oDataServers
+                        If String.Compare(value, oDataServer.Attributes("hostname").Value, True) = 0 Then
+                            f = True
+                            .Add("db", oDataServer.Attributes("database").Value)
+                            .Add("path", oDataServer.Attributes("path").Value)
+                            .Add("tabini", oDataServer.Attributes("tabini").Value)
+
+                        End If
+                    Next
+
+                    If Not f Then
+                        .Add("db", "")
+                        .Add("path", "")
+                        .Add("tabini", "")
+                    End If
+
+                    .Add("environment", "")
+                    .Add("oDataUser", "")
+                    .Add("oDataPassword", "")
+
+                End With
+
+                _webrelay.SendCmd(Me, e)
+
+                If e.errCode = 200 Then
+                    Settings("service") = value
+
+                    f = False
+                    For Each oDataServer As XmlNode In oDataServers
+                        If String.Compare(oDataServer.Attributes("hostname").Value, Service, True) = 0 Then
+                            f = True
+                            Settings("db") = oDataServer.Attributes("database").Value
+                            Settings("path") = oDataServer.Attributes("path").Value
+                            Settings("tabini") = oDataServer.Attributes("tabini").Value
+
+                        End If
+                    Next
+
+                    If Not f Then
+                        Settings("db") = ""
+                        Settings("path") = ""
+                        Settings("tabini") = ""
+                    End If
+
+                    Settings("environment") = ""
+                    Settings("oDataUser") = ""
+                    Settings("oDataPassword") = ""
+
+                End If
+
+            End If
         End Set
     End Property
 
-    <Browsable(False)>
+    <TypeConverter(GetType(Prop_Env)),
+    CategoryAttribute("oData Server"),
+    DescriptionAttribute("The Priority Company."),
+    Browsable(True)>
     Public Property Environment() As String
         Get
-            Return Settings("environment")
+            Try
+                Return Settings("environment")
+            Catch ex As Exception
+                Return String.Empty
+            End Try
+
         End Get
         Set(ByVal value As String)
-            Settings("environment") = value
+
+            If _webrelay.mmc Then
+                Dim e As CmdEventArgs = New CmdEventArgs(_webrelay.Host, _webrelay.Port)
+                e.Message = New oMsgCmd
+                With TryCast(e.Message, oMsgCmd).Args
+                    .Add("endpoint", Me.Endpoint)
+                    .Add("service", Service)
+                    .Add("environment", value)
+                End With
+
+                _webrelay.SendCmd(Me, e)
+                If e.errCode = 200 Then
+                    Settings("environment") = value
+                End If
+
+            End If
         End Set
     End Property
 
-    '<TypeConverter(GetType(Prop_Env)),
-    'CategoryAttribute("Settings"),
-    'DescriptionAttribute("The server and default environment to post bubbles.")>
-    'Public Property ServiceEnvironment() As String
-    '    Get
-    '        Return String.Format("{0}\{1}", Service, Environment)
-    '    End Get
-    '    Set(ByVal value As String)
-    '        Service = value.Split("\")(0)
-    '        Environment = value.Split("\")(1)
-    '        If _webrelay.mmc Then
-    '            Dim e As CmdEventArgs = New CmdEventArgs(_webrelay.Host, _webrelay.Port)
-    '            e.Message = New oMsgCmd
-    '            With TryCast(e.Message, oMsgCmd).Args
-    '                .Add("endpoint", Me.Endpoint)
-    '                .Add("service", Service)
-    '                .Add("environment", Environment)
-    '                For Each svc As oDiscovery In propSvcMap.svcMap.Values
-    '                    If String.Compare(svc.Host, Service, True) = 0 Then
-    '                        For Each i As oServiceBase In svc.values
-    '                            If Not IsNothing(TryCast(i, oLoader)) Then
-    '                                .Add("loadport", TryCast(i, oLoader).Port)
+    <TypeConverter(GetType(prop_User)),
+        CategoryAttribute("oData User"),
+        DescriptionAttribute("The Priority oData user for loadings."),
+        Browsable(True)>
+    Public Property Username() As String
+        Get
+            Try
+                Return Settings("oDataUser")
+            Catch ex As Exception
+                Return String.Empty
+            End Try
 
-    '                            End If
-    '                        Next
-    '                    End If
-    '                Next
-    '            End With
-    '            _webrelay.SendCmd(Me, e)
-    '        End If
-    '    End Set
-    'End Property
+        End Get
+        Set(ByVal value As String)
+
+            If _webrelay.mmc Then
+                Dim e As CmdEventArgs = New CmdEventArgs(_webrelay.Host, _webrelay.Port)
+                e.Message = New oMsgCmd
+                With TryCast(e.Message, oMsgCmd).Args
+                    .Add("endpoint", Me.Endpoint)
+                    .Add("service", Service)
+                    .Add("oDataUser", value)
+                End With
+
+                _webrelay.SendCmd(Me, e)
+                If e.errCode = 200 Then
+                    Settings("oDataUser") = value
+                End If
+
+            End If
+        End Set
+    End Property
+
+    <CategoryAttribute("oData User"),
+    DescriptionAttribute("The Priority oData users password."),
+    Browsable(True),
+    PasswordPropertyText(True)>
+    Public Property Password() As String
+        Get
+            Try
+                Return Settings("oDataPassword")
+            Catch ex As Exception
+                Return String.Empty
+            End Try
+
+        End Get
+        Set(ByVal value As String)
+            If String.Compare(value, InputBox("Please confirm password.", "Confirm")) = 0 Then
+
+                If _webrelay.mmc Then
+                    Dim e As CmdEventArgs = New CmdEventArgs(_webrelay.Host, _webrelay.Port)
+                    e.Message = New oMsgCmd
+                    With TryCast(e.Message, oMsgCmd).Args
+                        .Add("endpoint", Me.Endpoint)
+                        .Add("service", Service)
+                        .Add("oDataPassword", value)
+                    End With
+
+                    _webrelay.SendCmd(Me, e)
+                    If e.errCode = 200 Then
+                        Settings("oDataPassword") = value
+                    End If
+
+                End If
+
+            Else
+                MsgBox("Passwords do not match.", vbCritical, "Error")
+
+            End If
+        End Set
+    End Property
+
+    <TypeConverter(GetType(prop_LogServer)),
+    CategoryAttribute("Logging"),
+    DescriptionAttribute("The server to send log info."),
+    Browsable(True)>
+    Public Property LogServer() As String
+        Get
+            Try
+                Return Settings("LogServer")
+            Catch ex As Exception
+                Return String.Empty
+            End Try
+
+        End Get
+        Set(ByVal value As String)
+            If _webrelay.mmc Then
+                Dim lp As String = String.Empty
+                Dim e As CmdEventArgs = New CmdEventArgs(_webrelay.Host, _webrelay.Port)
+                e.Message = New oMsgCmd
+                With TryCast(e.Message, oMsgCmd).Args
+                    .Add("endpoint", Me.Endpoint)
+                    .Add("service", Service)
+                    .Add("LogServer", value)
+                    For Each d As oDiscovery In share.SvcMap.Values
+                        If String.Compare(value, d.Host) = 0 Then
+                            lp = d.Port
+                            .Add("LogPort", lp)
+                            Exit For
+                        End If
+                    Next
+                End With
+
+                _webrelay.SendCmd(Me, e)
+                If e.errCode = 200 Then
+                    Settings("LogServer") = value
+                    Settings("LogPort") = lp
+                End If
+            End If
+
+        End Set
+    End Property
+
+    <CategoryAttribute("Logging"),
+    DescriptionAttribute("The port used to log errors."),
+    Browsable(True),
+    [ReadOnly](True)>
+    Public Property LogPort() As String
+        Get
+            Try
+                Return Settings("LogPort")
+            Catch ex As Exception
+                Return String.Empty
+            End Try
+
+        End Get
+        Set(ByVal value As String)
+            Settings("LogPort") = value
+        End Set
+    End Property
 
 #End Region
 

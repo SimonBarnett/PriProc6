@@ -9,6 +9,8 @@ Imports System.Data.SqlClient
 Imports System.Drawing
 Imports System.Windows.Forms
 Imports System.ComponentModel
+Imports Microsoft.Web.Administration
+Imports PriPROC6.Interface.Cpl
 
 <Export(GetType(svcDef))>
 <ExportMetadata("Name", "loader")>
@@ -19,41 +21,191 @@ Public Class Loader
     Inherits svcbase
     Implements svcDef
 
+    Private PriorityWeb As Dictionary(Of String, oPriWeb)
+
 #Region "Start / Stop"
+
+    Private Function Webs(Optional ByRef log As oMsgLog = Nothing) As Dictionary(Of String, oPriWeb)
+
+        Dim throwLog As Boolean = False
+        If log Is Nothing Then
+            log = New oMsgLog(Me.Name, EvtLogSource.SYSTEM, EvtLogVerbosity.Verbose, LogEntryType.Information)
+            throwLog = True
+        End If
+
+        Dim ret As New Dictionary(Of String, oPriWeb)
+        Using sm As New ServerManager
+            For Each site As Site In sm.Sites
+                With site
+                    If .State = ObjectState.Started Then
+                        For Each app As Microsoft.Web.Administration.Application In .Applications
+                            For Each virtual As Microsoft.Web.Administration.VirtualDirectory In app.VirtualDirectories
+                                If String.Compare(virtual.Path, "/netfiles", True) = 0 Then
+
+                                    Dim di As New DirectoryInfo(virtual.PhysicalPath)
+                                    Dim srvpath As New FileInfo(Path.Combine(di.Parent.FullName, "srvpath"))
+                                    Dim db As String = String.Empty
+
+                                    Try
+                                        If Not File.Exists(srvpath.FullName) Then
+                                            Throw New Exception(String.Format("Missing svrpath file in {0}.", di.Parent.FullName))
+
+                                        End If
+
+                                        Try
+                                            Using sr As New StreamReader(srvpath.FullName)
+                                                db = sr.ReadToEnd().Replace(vbCr, "").Split(vbLf)(2)
+                                            End Using
+
+                                        Catch ex As Exception
+                                            Throw New Exception(String.Format("Corrupt file: {0}", srvpath.FullName))
+
+                                        End Try
+
+                                        If Not AttemptConnect(log, db) Then
+                                            Throw New Exception(
+                                                String.Format(
+                                                    "Could not connect to database {0}.",
+                                                    db
+                                                )
+                                            )
+
+                                        Else
+
+                                            Dim host As String = tld(NetDef(log, db, "MARKETGATEURL"))
+                                            If ret.Keys.Contains(host) Then
+                                                Throw New Exception(String.Format("Duplicate Priority Installation: {0}", host))
+
+                                            End If
+
+                                            'f = True
+                                            ret.Add(
+                                                host,
+                                                New oPriWeb(
+                                                    db,
+                                                    host,
+                                                    di.Parent.FullName,
+                                                    NetDef(log, db, "NETTABINI")
+                                                )
+                                            )
+                                            With ret(host).qfolder
+                                                If Not .Exists Then .Create()
+
+                                            End With
+
+                                            Using cmd As New prisql(log, db)
+                                                Try
+                                                    Dim dataReader As SqlDataReader = cmd.ExecuteReader(
+                                                        "use [system] " &
+                                                        "select DNAME from ENVIRONMENT " &
+                                                        "where DNAME <> ''"
+                                                    )
+
+                                                    If dataReader.HasRows Then
+                                                        dataReader.Read()
+                                                        Do
+                                                            ret(host).Environments.Add(dataReader.Item(0), New oEnv(ret(host), dataReader.Item(0)))
+                                                            With ret(host).Environments(dataReader.Item(0)).qFolder
+                                                                If Not .Exists Then .Create()
+                                                            End With
+
+                                                        Loop While dataReader.Read()
+
+                                                    End If
+
+                                                Catch ex As Exception
+                                                    If Not log Is Nothing Then
+                                                        log.setException(ex)
+                                                    End If
+
+                                                End Try
+
+                                            End Using
+
+                                            Using cmd As New prisql(log, db)
+                                                Try
+                                                    Dim dataReader As SqlDataReader = cmd.ExecuteReader(
+                                                        "use [system]; " &
+                                                        "SELECT RESTLOGIN FROM USERSB " &
+                                                        "WHERE REST = 'Y'"
+                                                    )
+
+                                                    If dataReader.HasRows Then
+                                                        dataReader.Read()
+                                                        Do
+                                                            ret(host).Users.Add(dataReader.Item(0))
+                                                        Loop While dataReader.Read()
+
+                                                    End If
+
+                                                Catch ex As Exception
+                                                    log.setException(ex)
+
+                                                End Try
+
+                                            End Using
+
+                                        End If
+
+                                    Catch ex As Exception
+                                        log.setException(ex)
+
+                                    End Try
+
+                                End If
+                            Next
+                        Next
+                    End If
+
+                End With
+            Next
+
+        End Using
+
+        If throwLog Then
+            If Not log.EntryType = LogEntryType.Information Then
+                LogQ.Enqueue(msgFactory.EncodeRequest("log", log))
+
+            End If
+        End If
+
+        Return ret
+
+    End Function
 
     Public Overrides Sub svcStart(ByRef log As oMsgLog)
 
-        If Not FindPriority(log) Then
+        Dim oDataServers = Webs(log)
+        If Not oDataServers.Count > 0 Then
             Throw New Exception(
                 String.Format(
-                    "A Priorty share was not located on {0}.",
-                    Environment.MachineName
+                    "Priority website Not found On \\{0}.",
+                    Environment.MachineName.ToUpper
                 )
             )
         End If
 
-        If Not AttemptConnect(log) Then
-            Throw New Exception(
-                String.Format(
-                    "Could not connect to database {0}.",
-                    thisConfig.regValue(False, "PriorityDB")
-                )
-            )
-        End If
-
-        _PriorityUsers = New PriorityUsers(Me, log)
+        '_PriorityUsers = New PriorityUsers(Me, log)
 
     End Sub
 
-    Function AttemptConnect(ByRef log As oMsgLog) As Boolean
+    Function tld(url As String) As String
+        Return String.Format(
+            "{0}//{1}",
+            Split(url, "//")(0),
+            Split(Split(url, "//")(1), "/")(0)
+        )
+    End Function
+
+    Function AttemptConnect(ByRef log As oMsgLog, db As String) As Boolean
 
         Dim ret As Boolean = False
         Try
-            Using cmd As New prisql(log, thisConfig)
+            Using cmd As New prisql(log, db)
                 Select Case cmd.ExecuteScalar(
-                    "SELECT count(name)" &
+                    "Select count(name)" &
                     "FROM sysdatabases " &
-                    "where name in ('system','pritempdb')"
+                    "where name In ('system','pritempdb')"
                 )
                     Case 2
                         log.LogData.Append("Connected OK.").AppendLine()
@@ -78,6 +230,20 @@ Public Class Loader
 
     End Function
 
+    Function NetDef(ByRef log As oMsgLog, db As String, Name As String) As String
+        Using cmd As New prisql(log, db)
+            Return cmd.ExecuteScalar(
+                    String.Format(
+                        "SELECT VALUE " &
+                        "FROM system.dbo.NETDEFS " &
+                        "where NAME ='{0}'",
+                        Name
+                    )
+                )
+        End Using
+
+    End Function
+
     Public Overrides Sub svcStop(ByRef log As oMsgLog)
 
     End Sub
@@ -89,66 +255,60 @@ Public Class Loader
     Public Overrides Sub writeXML(ByRef outputStream As XmlWriter)
 
         With outputStream
+            For Each pw As oPriWeb In Webs().Values
+                .WriteStartElement("priweb")
+                .WriteAttributeString("hostname", pw.Hostname)
+                .WriteAttributeString("database", pw.PriorityDB)
+                .WriteAttributeString("path", pw.Path)
+                .WriteAttributeString("tabini", pw.tabini)
 
-            .WriteElementString("PriorityShare", thisConfig.regValue(False, "PriorityShare"))
-            .WriteElementString("PriorityPath", thisConfig.regValue(False, "PriorityPath"))
-            .WriteElementString("PriorityDB", thisConfig.regValue(False, "PriorityDB"))
-
-            Dim log As New oMsgLog(Me.Name, EvtLogSource.SYSTEM, EvtLogVerbosity.Normal, LogEntryType.Information)
-            Using cmd As New prisql(log, thisConfig)
-                Try
-                    Dim dataReader As SqlDataReader = cmd.ExecuteReader(
-                    "use [system] " &
-                    "select DNAME from ENVIRONMENT " &
-                    "where DNAME <> ''"
-                )
-
-                    If dataReader.HasRows Then
-                        dataReader.Read()
-                        Do
-                            Dim d As New DirectoryInfo(
-                                IO.Path.Combine(
-                                    Qfolder.FullName,
-                                    dataReader.Item(0).ToString)
-                                )
-                            If Not d.Exists Then d.Create()
-
-                            .WriteStartElement("env")
-                            .WriteAttributeString("name", dataReader.Item(0).ToString)
-                            .WriteEndElement() 'End row 
-                        Loop While dataReader.Read()
-
-                    End If
-                Catch : End Try
-
-                Dim dic As Dictionary(Of String, String) = thisConfig.regDictionary(True, "users")
-                Dim f As Boolean = False
-                For Each u As String In dic.Keys
-                    .WriteStartElement("user")
-                    .WriteAttributeString("name", u.ToString)
+                For Each env As oEnv In pw.Environments.Values
+                    .WriteStartElement("env")
+                    .WriteAttributeString("name", env.Name)
                     .WriteEndElement() 'End row 
                 Next
-            End Using
 
-            If Not log.EntryType = LogEntryType.Information Then
-                LogQ.Enqueue(msgFactory.EncodeRequest("log", log))
-            End If
+                For Each usr As String In pw.Users
+                    .WriteStartElement("user")
+                    .WriteAttributeString("name", usr)
+                    .WriteEndElement() 'End row 
+                Next
+
+                .WriteEndElement() 'End row 
+            Next
 
         End With
+
     End Sub
 
     Public Overrides Function readXML(ByRef Service As XmlNode) As oServiceBase
         Dim ret As New oLoader(Service)
         With ret
-            .PriorityShare = Service.SelectSingleNode("PriorityShare").InnerText
-            .PriorityPath = Service.SelectSingleNode("PriorityPath").InnerText
-            .PriorityDB = Service.SelectSingleNode("PriorityDB").InnerText
+            For Each priweb As XmlNode In Service.SelectNodes("priweb")
 
-            For Each env As XmlNode In Service.SelectNodes("env")
-                .Add(env.Attributes("name").Value, New PriEnv(env.Attributes("name").Value))
-            Next
-            For Each usr As XmlNode In Service.SelectNodes("user")
-                .Users.Add(usr.Attributes("name").Value)
+                .Add(
+                    priweb.Attributes("hostname").Value,
+                    New oPriWeb(
+                        priweb.Attributes("database").Value,
+                        priweb.Attributes("hostname").Value,
+                        priweb.Attributes("path").Value,
+                        priweb.Attributes("tabini").Value
+                    )
+                )
+
+                With TryCast(ret(priweb.Attributes("hostname").Value), oPriWeb)
+                    For Each env As XmlNode In priweb.SelectNodes("env")
+                        .Environments.Add(
+                            env.Attributes("name").Value,
+                            New oEnv(
+                                ret(priweb.Attributes("hostname").Value),
+                                env.Attributes("name").Value
+                           )
+                        )
+                    Next
+
+                End With
+
             Next
 
         End With
@@ -191,65 +351,65 @@ Public Class Loader
 
         Select Case msg.msgType
             Case "cmd"
-                With TryCast(msg.thisObject, oMsgCmd)
-                    Try
-                        If .Args.Keys.Contains("user") Then
-                            Select Case .Args("user").ToLower
-                                Case "add"
-                                    thisLog.LogData.AppendFormat("Adding user [{0}].", .Args("username")).AppendLine()
-                                    _PriorityUsers.AddUser(
-                                        New PriorityUser(
-                                            .Args("username"),
-                                            .Args("password")
-                                        ), thisLog
-                                    )
-                                    thisLog.EntryType = LogEntryType.SuccessAudit
-                                    Return msgFactory.EncodeResponse("generic", 200)
+                '    With TryCast(msg.thisObject, oMsgCmd)
+                '        Try
+                '            If .Args.Keys.Contains("user") Then
+                '                Select Case .Args("user").ToLower
+                '                    Case "add"
+                '                        thisLog.LogData.AppendFormat("Adding user [{0}].", .Args("username")).AppendLine()
+                '                        _PriorityUsers.AddUser(
+                '                            New PriorityUser(
+                '                                .Args("username"),
+                '                                .Args("password")
+                '                            ), thisLog
+                '                        )
+                '                        thisLog.EntryType = LogEntryType.SuccessAudit
+                '                        Return msgFactory.EncodeResponse("generic", 200)
 
-                                Case "delete"
-                                    thisLog.LogData.AppendFormat("Deleting user [{0}].", .Args("username")).AppendLine()
-                                    _PriorityUsers.DeleteUser(
-                                        .Args("username"),
-                                        thisLog
-                                    )
-                                    thisLog.EntryType = LogEntryType.SuccessAudit
-                                    Return msgFactory.EncodeResponse("generic", 200)
+                '                    Case "delete"
+                '                        thisLog.LogData.AppendFormat("Deleting user [{0}].", .Args("username")).AppendLine()
+                '                        _PriorityUsers.DeleteUser(
+                '                            .Args("username"),
+                '                            thisLog
+                '                        )
+                '                        thisLog.EntryType = LogEntryType.SuccessAudit
+                '                        Return msgFactory.EncodeResponse("generic", 200)
 
-                                Case "chpass"
-                                    thisLog.LogData.AppendFormat("Chpass user [{0}].", .Args("username")).AppendLine()
-                                    _PriorityUsers.chPass(
-                                        New PriorityUser(
-                                            .Args("username"),
-                                            .Args("password")
-                                        ), thisLog
-                                    )
-                                    thisLog.EntryType = LogEntryType.SuccessAudit
-                                    Return msgFactory.EncodeResponse("generic", 200)
+                '                    Case "chpass"
+                '                        thisLog.LogData.AppendFormat("Chpass user [{0}].", .Args("username")).AppendLine()
+                '                        _PriorityUsers.chPass(
+                '                            New PriorityUser(
+                '                                .Args("username"),
+                '                                .Args("password")
+                '                            ), thisLog
+                '                        )
+                '                        thisLog.EntryType = LogEntryType.SuccessAudit
+                '                        Return msgFactory.EncodeResponse("generic", 200)
 
-                                Case Else
-                                    Return msgFactory.EncodeResponse("generic", 400, "Invalid user command.")
+                '                    Case Else
+                '                        Return msgFactory.EncodeResponse("generic", 400, "Invalid user command.")
 
-                            End Select
+                '                End Select
 
-                        Else
-                            Return msgFactory.EncodeResponse("generic", 400, "Unknown command.")
+                '            Else
+                '                Return msgFactory.EncodeResponse("generic", 400, "Unknown command.")
 
-                        End If
+                '            End If
 
-                    Catch ex As Exception
-                        thisLog.setException(ex)
-                        Return msgFactory.EncodeResponse("generic", 400, ex.Message)
+                '        Catch ex As Exception
+                '            thisLog.setException(ex)
+                '            Return msgFactory.EncodeResponse("generic", 400, ex.Message)
 
-                    End Try
+                '        End Try
 
-                End With
+                '    End With
 
-            Case "loading"
-                With TryCast(msg.thisObject, oMsgLoading)
-                    .toFile(New DirectoryInfo(Path.Combine(Qfolder.FullName, .SaveAs())))
-                    Return msgFactory.EncodeResponse("generic", 200)
+                'Case "loading"
+                '    With TryCast(msg.thisObject, oMsgLoading)
+                '        .toFile(New DirectoryInfo(Path.Combine(Qfolder.FullName, .SaveAs())))
+                '        Return msgFactory.EncodeResponse("generic", 200)
 
-                End With
+                '    End With
 
             Case Else
                 Throw New Exception("Unknown Message Type.")
@@ -363,34 +523,6 @@ Public Class Loader
 
 #End Region
 
-#Region "user"
-
-    Private _PriorityUsers As PriorityUsers
-    Public Property PriorityUsers As PriorityUsers
-        Get
-            Return _PriorityUsers
-        End Get
-        Set(value As PriorityUsers)
-            _PriorityUsers = value
-        End Set
-    End Property
-
-#End Region
-
-#Region "Queues"
-
-    Private _Queues As New Dictionary(Of String, LoadQ)
-    Public Property Queues As Dictionary(Of String, LoadQ)
-        Get
-            Return _Queues
-        End Get
-        Set(value As Dictionary(Of String, LoadQ))
-            _Queues = value
-        End Set
-    End Property
-
-#End Region
-
 #Region "control panel"
 
     Public Overrides ReadOnly Property ModuleVersion As Version
@@ -403,30 +535,15 @@ Public Class Loader
         Select Case UBound(args)
             Case 1
                 Return New cplLoader(TryCast(o, oLoader))
-                'Case 2
-                '    Select Case args(2)
-                '        Case "users"
-                '            pnlName = "User"
-                '            Return Me
+            Case 2
+                Return New cplPropertyPage(TryCast(o(args(2)), oPriWeb))
 
-                '        Case "env"
-                '            Return Nothing
+            Case 3
+                Return New cplPropertyPage(TryCast(TryCast(o(args(2)), oPriWeb).Environments(args(3)), oEnv))
 
-                '        Case Else
-                '            Return Nothing
+            Case 4
+                Return New cplBubblePage(TryCast(TryCast(o(args(2)), oPriWeb).Environments(args(3)), oEnv).qFolder)
 
-                '    End Select
-
-                'Case 4
-                '    Select Case args(2)
-                '        Case "env"
-                '            pnlName = "Bubble"
-                '            Return New DirectoryInfo(Path.Combine(Me.PriorityShare, "system\queue", args(3), args(4)))
-
-                '        Case Else
-                '            Return Nothing
-
-                '    End Select
             Case Else
                 Return Nothing
 
@@ -442,6 +559,7 @@ Public Class Loader
             ret.Add(Me.Name, My.Resources.ppLoader)
             ret.Add("environment", My.Resources.priority)
             ret.Add("user", My.Resources.userconfig)
+            ret.Add("priority", My.Resources.priority)
             ret.Add("procedure", My.Resources.procedure)
             Return ret
         End Get
@@ -451,7 +569,7 @@ Public Class Loader
         With Parent
             Dim this As TreeNode = .Nodes(TreeTag(p))
             If IsNothing(this) Then
-                this = .Nodes.Add(TreeTag(p), Name, IconList("loader"), IconList("loader"))
+                this = .Nodes.Add(TreeTag(p), Name, IconList(Name), IconList(Name))
             Else
                 If p.IsTimedOut Then
                     .Nodes.Remove(this)
@@ -459,23 +577,20 @@ Public Class Loader
                 End If
             End If
 
-            'With this
-            '    Dim usersNode As TreeNode = .Nodes(String.Format("{0}\users", TreeTag))
-            '    If IsNothing(usersNode) Then
-            '        usersNode = .Nodes.Add(String.Format("{0}\users", TreeTag), "Users", IconList("user"), IconList("user"))
-            '    End If
+            For Each PriorityWeb As Object In p.values
+                With TryCast(PriorityWeb, oPriWeb)
 
-            '    Dim envNode As TreeNode = .Nodes(String.Format("{0}\env", TreeTag))
-            '    If IsNothing(envNode) Then
-            '        envNode = .Nodes.Add(String.Format("{0}\env", TreeTag), "Company", IconList("environment"), IconList("environment"))
-            '    End If
+                    Dim pweb As TreeNode = this.Nodes(String.Format("{0}\{1}", TreeTag(p), .Hostname))
 
-            '    For Each Env As Object In Me.values
-            '        With TryCast(Env, PriEnv)
-            '            .DrawTree(Me, envNode, IconList)
-            '        End With
-            '    Next
-            'End With
+                    If IsNothing(pweb) Then
+                        pweb = this.Nodes.Add(String.Format("{0}\{1}", TreeTag(p), .Hostname), .Hostname, IconList("priority"), IconList("priority"))
+                    End If
+
+                    .DrawTree(TryCast(PriorityWeb, oPriWeb), pweb, IconList)
+
+                End With
+            Next
+
         End With
 
     End Sub

@@ -115,7 +115,16 @@ Public Class iListener : Inherits socketListener
                     data.Append(Encoding.ASCII.GetString(bytes, 0, bytesRec))
 
                 Catch ex As Exception
-                    Beep()
+                    Dim msg As New oMsgLog(Name, EvtLogSource.SYSTEM, EvtLogVerbosity.Normal, LogEntryType.Warning)
+                    With msg
+                        .LogData.AppendFormat("Bad data from client:{0}", Socket.RemoteEndPoint.ToString).AppendLine()
+                        .LogData.Append(ex.Message).AppendLine()
+
+                    End With
+                    logq.Enqueue(msgFactory.EncodeRequest("log", msg))
+
+                    Socket.Close()
+                    Exit Sub
 
                 End Try
             Loop Until EndTrans(data)
@@ -148,6 +157,8 @@ Public Class iListener : Inherits socketListener
             '    .Close()
 
             'End Try
+
+            .Close()
 
         End With
 
