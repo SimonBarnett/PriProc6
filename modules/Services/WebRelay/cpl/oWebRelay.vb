@@ -16,6 +16,31 @@ Public Class oWebRelay : Inherits oService
 
     End Sub
 
+    Public Overrides Sub Update(ByRef Service As oServiceBase)
+        MyBase.Update(Service)
+        With TryCast(Service, oWebRelay)
+            For Each web As PriWeb In Service.values
+                If Not Keys.Contains(web.Endpoint) Then
+                    Me.Add(web.Endpoint, web)
+                Else
+                    With TryCast(Me(web.Endpoint), PriWeb)
+                        .Settings = web.Settings
+                        .siteFeeds = web.siteFeeds
+                        .siteHandlers = web.siteHandlers
+                    End With
+                End If
+            Next
+            Dim delEP As New List(Of String)
+            For Each web As PriWeb In Me.values
+                If Not .Keys.Contains(web.Endpoint) Then
+                    delEP.Add(web.Endpoint)
+                End If
+            Next
+            For Each del As String In delEP
+                Me.Remove(del)
+            Next
+        End With
+    End Sub
 #End Region
 
 #Region "Properties"

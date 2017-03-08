@@ -43,10 +43,19 @@ Public Class PriWeb
                 feeds = this.Nodes.Add(String.Format("{0}\feeds", TreeTag), "Feeds", IconList("feeds"), IconList("feeds"))
             End If
 
+            Dim removefeed As New List(Of String)
             For Each f As EndPoint In siteFeeds
                 Dim feed As TreeNode = feeds.Nodes(String.Format("{0}\feeds\{1}", TreeTag, f.Name))
+                removefeed.Add(String.Format("{0}\feeds\{1}", TreeTag, f.Name))
                 If IsNothing(feed) Then
                     feeds.Nodes.Add(String.Format("{0}\feeds\{1}", TreeTag, f.Name), String.Format("{0}.ashx", f.Name), IconList("feed"), IconList("feed"))
+                End If
+            Next
+            For Each rf As TreeNode In feeds.Nodes
+                If Not rf Is Nothing Then
+                    If Not removefeed.Contains(rf.Name) Then
+                        rf.Remove()
+                    End If
                 End If
             Next
 
@@ -55,11 +64,22 @@ Public Class PriWeb
                 handlers = this.Nodes.Add(String.Format("{0}\handlers", TreeTag), "Handlers", IconList("handlers"), IconList("handlers"))
             End If
 
+            Dim removehandlers As New List(Of String)
             For Each h As EndPoint In siteHandlers
                 Dim handler As TreeNode = handlers.Nodes(String.Format("{0}\handlers\{1}", TreeTag, h.Name))
+                removehandlers.Add(String.Format("{0}\handlers\{1}", TreeTag, h.Name))
+
                 If IsNothing(handler) Then
                     handlers.Nodes.Add(String.Format("{0}\handlers\{1}", TreeTag, h.Name), String.Format("{0}.ashx", h.Name), IconList("feed"), IconList("feed"))
                 End If
+            Next
+            For Each rh As TreeNode In handlers.Nodes
+                If Not rh Is Nothing Then
+                    If Not removehandlers.Contains(rh.Name) Then
+                        rh.Remove()
+                    End If
+                End If
+
             Next
 
         End With
@@ -193,19 +213,25 @@ Public Class PriWeb
     Private _siteFeeds As New List(Of EndPoint)
     <Browsable(False),
     DesignOnly(False)>
-    Public ReadOnly Property siteFeeds As List(Of EndPoint)
+    Public Property siteFeeds As List(Of EndPoint)
         Get
             Return _siteFeeds
         End Get
+        Set(value As List(Of EndPoint))
+            _siteFeeds = value
+        End Set
     End Property
 
     Private _siteHandlers As New List(Of EndPoint)
     <Browsable(False),
     DesignOnly(False)>
-    Public ReadOnly Property siteHandlers As List(Of EndPoint)
+    Public Property siteHandlers As List(Of EndPoint)
         Get
             Return _siteHandlers
         End Get
+        Set(value As List(Of EndPoint))
+            _siteHandlers = value
+        End Set
     End Property
 
     <CategoryAttribute("Settings"),

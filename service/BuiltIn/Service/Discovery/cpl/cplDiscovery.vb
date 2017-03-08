@@ -11,7 +11,7 @@ Public Class cplDiscovery : Inherits BaseCpl
         InitializeComponent()
         Obj = o
         PropertyGrid.SelectedObject = Obj
-        webbrowser.SetXML(TryCast(Obj, oDiscovery).BroacastXML)
+        WebBrowser.SetXML(TryCast(Obj, oDiscovery).BroacastXML)
 
     End Sub
 

@@ -309,6 +309,15 @@ Public Class Loader
 
                 End With
 
+                With TryCast(ret(priweb.Attributes("hostname").Value), oPriWeb)
+                    For Each env As XmlNode In priweb.SelectNodes("user")
+                        .Users.Add(
+                            env.Attributes("name").Value
+                        )
+                    Next
+
+                End With
+
             Next
 
         End With
@@ -577,11 +586,11 @@ Public Class Loader
                 End If
             End If
 
+            Dim del As New List(Of String)
             For Each PriorityWeb As Object In p.values
                 With TryCast(PriorityWeb, oPriWeb)
-
+                    del.Add(String.Format("{0}\{1}", TreeTag(p), .Hostname))
                     Dim pweb As TreeNode = this.Nodes(String.Format("{0}\{1}", TreeTag(p), .Hostname))
-
                     If IsNothing(pweb) Then
                         pweb = this.Nodes.Add(String.Format("{0}\{1}", TreeTag(p), .Hostname), .Hostname, IconList("priority"), IconList("priority"))
                     End If
@@ -589,6 +598,14 @@ Public Class Loader
                     .DrawTree(TryCast(PriorityWeb, oPriWeb), pweb, IconList)
 
                 End With
+            Next
+
+            For Each tv As TreeNode In this.Nodes
+                If Not tv Is Nothing Then
+                    If Not del.Contains(tv.Name) Then
+                        tv.Remove()
+                    End If
+                End If
             Next
 
         End With

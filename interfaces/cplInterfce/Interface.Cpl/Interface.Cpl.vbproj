@@ -71,22 +71,16 @@
     <Compile Include="cpl\BaseCpl.Designer.vb">
       <DependentUpon>BaseCpl.vb</DependentUpon>
     </Compile>
-    <Compile Include="cpl\BaseCpl.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="cpl\BaseCpl.vb" />
     <Compile Include="cpl\cplHtmlPage.Designer.vb">
       <DependentUpon>cplHtmlPage.vb</DependentUpon>
     </Compile>
-    <Compile Include="cpl\cplHtmlPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="cpl\cplHtmlPage.vb" />
     <Compile Include="cplInterface.vb" />
     <Compile Include="cpl\cplPropertyPage.Designer.vb">
       <DependentUpon>cplPropertyPage.vb</DependentUpon>
     </Compile>
-    <Compile Include="cpl\cplPropertyPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="cpl\cplPropertyPage.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>

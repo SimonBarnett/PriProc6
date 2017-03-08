@@ -75,19 +75,13 @@
     <Compile Include="cpl\Bubble\BubbleDetail.Designer.vb">
       <DependentUpon>BubbleDetail.vb</DependentUpon>
     </Compile>
-    <Compile Include="cpl\Bubble\BubbleDetail.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="cpl\Bubble\BubbleDetail.vb" />
     <Compile Include="cpl\Bubble\cplBubblePage.Designer.vb">
       <DependentUpon>cplBubblePage.vb</DependentUpon>
     </Compile>
-    <Compile Include="cpl\Bubble\cplBubblePage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="cpl\Bubble\cplBubblePage.vb" />
     <Compile Include="cpl\Bubble\ListViewItemComparer.vb" />
-    <Compile Include="cpl\cplLoader.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="cpl\cplLoader.vb" />
     <Compile Include="cpl\oLoader.vb" />
     <Compile Include="cpl\PriWeb\oEnv.vb" />
     <Compile Include="cpl\PriWeb\oPriWeb.vb" />

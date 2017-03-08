@@ -20,6 +20,29 @@ Public Class oLoader : Inherits svcMessage.oService
     Public Overrides Sub Update(ByRef Service As oServiceBase)
         With TryCast(Service, oLoader)
             MyBase.Update(Service)
+
+            Dim delHost As New List(Of String)
+            For Each oDataServer As oPriWeb In .values
+                delHost.Add(oDataServer.Hostname)
+                If Not oDataServers.Keys.Contains(oDataServer.Hostname) Then
+                    oDataServers.Add(oDataServer.Hostname, oDataServer)
+                Else
+                    ' update
+                    oDataServers(oDataServer.Hostname) = oDataServer
+                End If
+            Next
+
+            Dim del As New List(Of String)
+            For Each k As String In oDataServers.Keys
+                If Not delHost.Contains(k) Then
+                    del.Add(k)
+                End If
+            Next
+
+            For Each d As String In del
+                oDataServers.Remove(d)
+            Next
+
             '    _PriorityShare = .PriorityShare
             '    _PriorityPath = .PriorityPath
             '    _PriorityDB = .PriorityDB
@@ -105,16 +128,16 @@ Public Class oLoader : Inherits svcMessage.oService
     '    End Set
     'End Property
 
-    'Private _Users As New List(Of String)
-    '<Browsable(False)>
-    'Public Property Users As List(Of String)
-    '    Get
-    '        Return _Users
-    '    End Get
-    '    Set(value As List(Of String))
-    '        _Users = value
-    '    End Set
-    'End Property
+    Private _oDataServers As New Dictionary(Of String, oPriWeb)
+    <Browsable(False)>
+    Public Property oDataServers As Dictionary(Of String, oPriWeb)
+        Get
+            Return _oDataServers
+        End Get
+        Set(value As Dictionary(Of String, oPriWeb))
+            _oDataServers = value
+        End Set
+    End Property
 
 #End Region
 

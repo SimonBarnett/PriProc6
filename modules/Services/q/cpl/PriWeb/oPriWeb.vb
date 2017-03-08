@@ -136,14 +136,24 @@ Public Class oPriWeb
         _web = web
         With Parent
 
+            Dim del As New List(Of String)
             For Each env As oEnv In web.Environments.Values
                 Dim envNode As TreeNode
+                del.Add(String.Format("{0}\{1}", TreeTag(Parent), env.Name))
                 If IsNothing(.Nodes(String.Format("{0}\{1}", TreeTag(Parent), env.Name))) Then
                     envNode = .Nodes.Add(String.Format("{0}\{1}", TreeTag(Parent), env.Name), env.Name, IconList("user"), IconList("user"))
                 Else
                     envNode = .Nodes(String.Format("{0}\{1}", TreeTag(Parent), env.Name))
                 End If
                 env.DrawTree(env, envNode, IconList)
+            Next
+
+            For Each tv As TreeNode In Parent.Nodes
+                If Not tv Is Nothing Then
+                    If Not del.Contains(tv.Name) Then
+                        tv.Remove()
+                    End If
+                End If
             Next
 
         End With

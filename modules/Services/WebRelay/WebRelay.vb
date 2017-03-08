@@ -257,7 +257,7 @@ Public Class webRelay : Inherits svcbase
                                         If c > 9 Then
                                             changeLog.EntryType = LogEntryType.FailureAudit
                                             changeLog.setException(ex)
-                                            Return msgFactory.EncodeResponse("generic", 400, ex.Message)
+                                            Return msgFactory.EncodeResponse("generic", 400, "The web.config is already open. Please try again.")
 
                                         Else
                                             Threading.Thread.Sleep(500)
@@ -709,10 +709,19 @@ Public Class webRelay : Inherits svcbase
                 End If
             End If
 
+            Dim tags As New List(Of String)
             For Each host As Object In TryCast(p, oWebRelay).values
                 With TryCast(host, PriWeb)
                     .DrawTree(p, this, IconList)
+                    tags.Add(.TreeTag)
                 End With
+            Next
+
+            For Each tv As TreeNode In this.Nodes
+                If Not tags.Contains(tv.Name) Then
+                    this.Nodes.Remove(tv)
+                End If
+                ' 
             Next
 
         End With

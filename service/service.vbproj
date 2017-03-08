@@ -78,9 +78,7 @@
     <Compile Include="BuiltIn\Service\Discovery\cpl\cplDiscovery.Designer.vb">
       <DependentUpon>cplDiscovery.vb</DependentUpon>
     </Compile>
-    <Compile Include="BuiltIn\Service\Discovery\cpl\cplDiscovery.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="BuiltIn\Service\Discovery\cpl\cplDiscovery.vb" />
     <Compile Include="BuiltIn\Service\Discovery\Discovery.vb" />
     <Compile Include="BuiltIn\Subscriber\Broadcast\cpl\oSubBroadcast.vb" />
     <Compile Include="BuiltIn\Subscriber\Broadcast\udp.subscriber.vb" />

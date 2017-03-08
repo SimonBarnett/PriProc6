@@ -85,14 +85,23 @@ Public Class oEnv
     Public Sub DrawTree(ByRef env As oEnv, ByRef Parent As TreeNode, ByRef IconList As Dictionary(Of String, Integer))
         With Parent
 
+            Dim del As New List(Of String)
             For Each di As DirectoryInfo In New DirectoryInfo(env.qFolder.FullName).GetDirectories
                 Dim diNode As TreeNode
+                del.Add(String.Format("{0}\{1}", TreeTag(Parent), di.Name))
                 If IsNothing(.Nodes(String.Format("{0}\{1}", TreeTag(Parent), di.Name))) Then
                     diNode = .Nodes.Add(String.Format("{0}\{1}", TreeTag(Parent), di.Name), di.Name, IconList("procedure"), IconList("procedure"))
                 Else
                     diNode = .Nodes(String.Format("{0}\{1}", TreeTag(Parent), di.Name))
                 End If
 
+            Next
+            For Each tv As TreeNode In Parent.Nodes
+                If Not tv Is Nothing Then
+                    If Not del.Contains(tv.Name) Then
+                        tv.Remove()
+                    End If
+                End If
             Next
 
         End With

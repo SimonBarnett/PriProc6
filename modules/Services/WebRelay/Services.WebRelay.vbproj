@@ -93,11 +93,11 @@
     </Compile>
     <Compile Include="cpl\webrelay\PriWeb.vb" />
     <Compile Include="EndPoints.vb" />
-    <Compile Include="prop_env.vb" />
-    <Compile Include="prop_LogServer.vb" />
-    <Compile Include="prop_oDataServers.vb" />
-    <Compile Include="prop_User.vb" />
-    <Compile Include="shared.vb" />
+    <Compile Include="PropertyPages\prop_env.vb" />
+    <Compile Include="PropertyPages\prop_LogServer.vb" />
+    <Compile Include="PropertyPages\prop_oDataServers.vb" />
+    <Compile Include="PropertyPages\prop_User.vb" />
+    <Compile Include="PropertyPages\shared.vb" />
     <Compile Include="WebRelay.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
