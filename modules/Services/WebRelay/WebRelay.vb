@@ -214,31 +214,62 @@ Public Class webRelay : Inherits svcbase
                             changeLog.LogData.AppendFormat("Updating Endpoint {0}.", targetWeb.Endpoint).AppendLine()
 
                             For Each k As String In .Args.Keys
-                                If Not String.Compare(k, "endpoint") = 0 Then
-                                    Dim f As Boolean = False
+                                Select Case k
+                                    Case "endpoint"
+                                        ' Ignore
 
-                                    For Each att As ConfigurationElement In appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual)
-                                        If String.Compare(att.Attributes("key").Value, k, True) = 0 Then
-                                            If Not String.Compare(att.Attributes("value").Value, .Args(k)) = 0 Then
-                                                changes = True
-                                                changeLog.LogData.AppendFormat("Updating setting [{0}]={1}", k, .Args(k)).AppendLine()
-                                                att.Attributes("value").Value = .Args(k)
+                                    Case "db"
+                                        Dim f As Boolean = False
+
+                                        For Each att As ConfigurationElement In cnSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual)
+
+                                            If String.Compare(att.Attributes("name").Value, "priority", True) = 0 Then
+                                                If Not String.Compare(att.Attributes("connectionString").Value, DSN(.Args(k))) = 0 Then
+                                                    changes = True
+                                                    changeLog.LogData.AppendFormat("Updating Priority database connection [{0}]", DSN(.Args(k))).AppendLine()
+                                                    att.Attributes("connectionString").Value = DSN(.Args(k))
+                                                End If
+                                                f = True
+                                                Exit For
+
                                             End If
-                                            f = True
-                                            Exit For
+                                        Next
+
+                                        If Not f Then
+                                            changes = True
+                                            changeLog.LogData.AppendFormat("Adding Priority database connection [{0}]", DSN(.Args(k))).AppendLine()
+                                            Dim addelement As ConfigurationElement = cnSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).CreateElement("add")
+                                            addelement("connectionString") = DSN(.Args(k))
+                                            addelement("name") = "priority"
+                                            addelement("providerName") = "System.Data.SqlClient"
+                                            cnSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).Add(addelement)
                                         End If
-                                    Next
 
-                                    If Not f Then
-                                        changes = True
-                                        changeLog.LogData.AppendFormat("Adding Setting [{0}]={1}", k, .Args(k)).AppendLine()
-                                        Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).CreateElement("add")
-                                        addelement("key") = k
-                                        addelement("value") = .Args(k)
-                                        appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).Add(addelement)
-                                    End If
+                                    Case Else
+                                        Dim f As Boolean = False
 
-                                End If
+                                        For Each att As ConfigurationElement In appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual)
+                                            If String.Compare(att.Attributes("key").Value, k, True) = 0 Then
+                                                If Not String.Compare(att.Attributes("value").Value, .Args(k)) = 0 Then
+                                                    changes = True
+                                                    changeLog.LogData.AppendFormat("Updating setting [{0}]={1}", k, .Args(k)).AppendLine()
+                                                    att.Attributes("value").Value = .Args(k)
+                                                End If
+                                                f = True
+                                                Exit For
+                                            End If
+                                        Next
+
+                                        If Not f Then
+                                            changes = True
+                                            changeLog.LogData.AppendFormat("Adding Setting [{0}]={1}", k, .Args(k)).AppendLine()
+                                            Dim addelement As ConfigurationElement = appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).CreateElement("add")
+                                            addelement("key") = k
+                                            addelement("value") = .Args(k)
+                                            appSettings(sm.Sites(targetWeb.SiteName), targetWeb.virtual).Add(addelement)
+                                        End If
+
+                                End Select
                             Next
 
                             If changes Then
@@ -255,7 +286,6 @@ Public Class webRelay : Inherits svcbase
                                     Catch ex As Exception
                                         c += 1
                                         If c > 9 Then
-                                            changeLog.EntryType = LogEntryType.FailureAudit
                                             changeLog.setException(ex)
                                             Return msgFactory.EncodeResponse("generic", 400, "The web.config is already open. Please try again.")
 

@@ -171,7 +171,7 @@ Public Class PriWeb
 
     Private _Path As String
     <CategoryAttribute("Host"),
-    Browsable(True),
+    Browsable(False),
     [ReadOnly](True),
     BindableAttribute(False),
     DefaultValueAttribute(""),
@@ -236,7 +236,7 @@ Public Class PriWeb
 
     <CategoryAttribute("Settings"),
     DescriptionAttribute("The database connection string."),
-    Browsable(True),
+    Browsable(False),
     [ReadOnly](True)>
     Public Property Database() As String
         Get
@@ -254,7 +254,7 @@ Public Class PriWeb
 
     <CategoryAttribute("Settings"),
     DescriptionAttribute("The location to store bubbles."),
-    Browsable(True),
+    Browsable(False),
     [ReadOnly](True)>
     Public Property SavePath() As String
         Get
@@ -272,7 +272,7 @@ Public Class PriWeb
 
     <CategoryAttribute("oData Server"),
     DescriptionAttribute("The tabula.ini file to use for oData calls."),
-    Browsable(True),
+    Browsable(False),
     [ReadOnly](True)>
     Public Property TabulaINI() As String
         Get
@@ -514,7 +514,7 @@ Public Class PriWeb
 
     <CategoryAttribute("Logging"),
     DescriptionAttribute("The port used to log errors."),
-    Browsable(True),
+    Browsable(False),
     [ReadOnly](True)>
     Public Property LogPort() As String
         Get
